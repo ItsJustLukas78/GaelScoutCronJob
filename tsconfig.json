@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "target": "es2015",
+    "moduleResolution": "nodenext",
+    "sourceMap": true,
+      "lib": [
+          "dom",
+          "es5",
+          "scripthost",
+          "es2015.promise"
+      ]
+  },
+    "include": [
+        "src/**/*"
+    ]
+}

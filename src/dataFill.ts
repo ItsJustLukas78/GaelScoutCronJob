@@ -37,6 +37,7 @@ export class Team {
   mu: number = 25;
   sigma: number = 8.333333333333334;
   openSkill: number = 0;
+  openSkillRank: number = 0;
 
   opr: number = 0;
   dpr: number = 0;
@@ -48,6 +49,8 @@ export class Team {
 
   topProgSkills: number = 0;
   topDriverSkills: number = 0;
+  topTotalSkills: number = 0;
+  skillsRank: number = 0;
 
   qualMatchCount: number = 0;
   elimMatchCount: number = 0;
@@ -102,6 +105,7 @@ export class Team {
     team.mu = teamDocument.mu;
     team.sigma = teamDocument.sigma;
     team.openSkill = teamDocument.openSkill;
+    team.openSkillRank = teamDocument.openSkillRank;
     team.opr = teamDocument.opr;
     team.dpr = teamDocument.dpr;
     team.ccwm = teamDocument.ccwm;
@@ -110,6 +114,8 @@ export class Team {
     team.eventCount = teamDocument.eventCount;
     team.topProgSkills = teamDocument.topProgSkills;
     team.topDriverSkills = teamDocument.topDriverSkills;
+    team.topTotalSkills = teamDocument.topTotalSkills;
+    team.skillsRank = teamDocument.skillsRank;
     team.qualMatchCount = teamDocument.qualMatchCount;
     team.elimMatchCount = teamDocument.elimMatchCount;
     team.qualMatchWins = teamDocument.qualMatchWins;
@@ -206,9 +212,11 @@ export class Team {
 
         this.topProgSkills = topProgSkills;
         this.topDriverSkills = topDriverSkills;
+        this.topTotalSkills = topProgSkills + topDriverSkills;
       } else {
         this.topProgSkills = 0;
         this.topDriverSkills = 0;
+        this.topTotalSkills = 0;
       }
     }
   }
@@ -230,6 +238,23 @@ export class Team {
     });
 
     await Promise.all(promises);
+
+    // rank teams by trueskill and top total skills
+    const openSkillSorted = this.teams.sort((teamA, teamB) => {
+      return teamB.openSkill - teamA.openSkill;
+    });
+
+    const topSkillsSorted = this.teams.sort((teamA, teamB) => {
+      return teamB.topTotalSkills - teamA.topTotalSkills;
+    });
+
+    openSkillSorted.forEach((team, index) => {
+      team.openSkillRank = index + 1;
+    });
+
+    topSkillsSorted.forEach((team, index) => {
+      team.skillsRank = index + 1;
+    });
   }
 
   static async storeTeamsInDB(teams?: Team[]): Promise<void> {
@@ -252,6 +277,7 @@ export class Team {
         mu: team.mu,
         sigma: team.sigma,
         openSkill: team.openSkill,
+        openSkillRank: team.openSkillRank,
         opr: team.opr,
         dpr: team.dpr,
         ccwm: team.ccwm,
@@ -260,6 +286,8 @@ export class Team {
         eventCount: team.eventCount,
         topProgSkills: team.topProgSkills,
         topDriverSkills: team.topDriverSkills,
+        topTotalSkills: team.topTotalSkills,
+        skillsRank: team.skillsRank,
         qualMatchCount: team.qualMatchCount,
         elimMatchCount: team.elimMatchCount,
         qualMatchWins: team.qualMatchWins,

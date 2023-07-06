@@ -14,6 +14,7 @@ export interface TeamDocumentType {
     mu: number;
     sigma: number;
     openSkill: number;
+    openSkillRank: number;
     opr: number;
     dpr: number;
     ccwm: number;
@@ -22,6 +23,8 @@ export interface TeamDocumentType {
     eventCount: number;
     topProgSkills: number;
     topDriverSkills: number;
+    topTotalSkills: number;
+    skillsRank: number;
     qualMatchCount: number;
     elimMatchCount: number;
     qualMatchWins: number;
@@ -49,6 +52,7 @@ const teamSchema = new Schema<TeamDocumentType>({
     mu: { type: Number, required: true },
     sigma: { type: Number, required: true },
     openSkill: { type: Number, required: true },
+    openSkillRank: { type: Number, required: true },
     opr: { type: Number, required: true },
     dpr: { type: Number, required: true },
     ccwm: { type: Number, required: true },
@@ -57,6 +61,8 @@ const teamSchema = new Schema<TeamDocumentType>({
     eventCount: { type: Number, required: true },
     topProgSkills: { type: Number, required: true },
     topDriverSkills: { type: Number, required: true },
+    topTotalSkills: { type: Number, required: true },
+    skillsRank: { type: Number, required: true },
     qualMatchCount: { type: Number, required: true },
     elimMatchCount: { type: Number, required: true },
     qualMatchWins: { type: Number, required: true },

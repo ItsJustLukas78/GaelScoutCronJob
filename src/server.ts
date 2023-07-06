@@ -35,16 +35,16 @@ mainApp.get('/', (req: Request, res: Response) => {
 });
 
 async function run() {
-  await connect(process.env.MONGO_URI);
+  await connect(process.env.MONGO_URI as string);
 
   mainApp.listen(process.env.PORT, () => {
     console.log(`Listening on port ${process.env.PORT}`);
   });
 
-  const DBMetadData = await MetadataDocument.findOne({});
+  let DBMetadData = await MetadataDocument.findOne({});
 
   if (!DBMetadData) {
-    await MetadataDocument.create({
+    DBMetadData = await MetadataDocument.create({
       // create date forever ago so that it will be updated
       latestTeamsUpdate: new Date(0),
     });

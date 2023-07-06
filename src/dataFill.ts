@@ -379,17 +379,17 @@ class Event {
   }
 }
 
-export const calcCumulativeStats = async (seasonId: number) => {
+export const calcCumulativeStats = async (seasonId: number): Promise<Date> => {
   const seasonEvents = await getEvents(seasonId);
 
   const DBMetaData: MetadataDocumentType | null = await MetadataDocument.findOne({})
 
 
   if (!seasonEvents || !DBMetaData) {
-    return;
+    return new Date(0);
   }
 
-  const latestTeamsUpdate = new Date();
+  const latestTeamsUpdate: Date = new Date();
 
   const newEvents = seasonEvents.filter(async (event) => {
     if (new Date(event.end).getTime() > Date.now()) {

@@ -7,8 +7,8 @@ dotenv.config();
 const API_KEY: string = process.env.ROBOT_EVENTS_TOKEN as string;
 
 const throttler = new Bottleneck({
-  reservoir: 100,
-  reservoirRefreshAmount: 100,
+  reservoir: 95,
+  reservoirRefreshAmount: 95,
   reservoirRefreshInterval: 60 * 1000,
 
   maxConcurrent: 1,

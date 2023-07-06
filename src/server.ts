@@ -58,6 +58,7 @@ async function run() {
   await Team.storeTeamsInDB();
 
   DBMetadData.latestTeamsUpdate = latestTeamsUpdate;
+  await DBMetadData.save();
 
   const endAnalysis = performance.now();
 

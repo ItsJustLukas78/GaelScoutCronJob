@@ -1,6 +1,6 @@
-import axios, { AxiosResponse } from "axios";
 import Bottleneck from "bottleneck";
 import * as dotenv from "dotenv";
+import fetch, { Response } from 'node-fetch';
 
 dotenv.config();
 
@@ -12,19 +12,24 @@ const throttler = new Bottleneck({
 });
 
 
-async function apiCall(url: string, headers: object, params?: object): Promise<AxiosResponse<any>> {
+async function apiCall(url: string, headers: object, params?: object): Promise<any> {
   try {
     console.log(`Making API call to ${url}`);
-    const response: AxiosResponse<any> = await throttler.schedule(() => axios.get(url, { headers, params: params ? params : {} }));
+    const response: Response = await throttler.schedule(() =>
+      fetch(url, {
+        method: 'GET',
+        headers: {...headers},
+      }
+    ));
 
     if (response.status === 429) {
-      const wait_time: number = parseInt(response.headers["retry-after"] || "5") + 1;
+      const wait_time: number = parseInt(response.headers.get("retry-after") || "5") + 1;
       console.log(`Sleeping for ${wait_time} seconds`);
       await new Promise((resolve) => setTimeout(resolve, wait_time * 1000));
       return apiCall(url, headers, params);
     }
 
-    return response;
+    return await response.json();
   } catch (error) {
     throw error;
   }
@@ -39,9 +44,9 @@ export async function getEventId(event_code: string): Promise<number | null> {
   const new_params = { sku: event_code };
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    const team_id: number = response.data.data[0]?.id;
+    const team_id: number = response.data[0]?.id;
     if (!team_id) {
       console.warn("Warning: No id could be found");
       return null;
@@ -63,9 +68,9 @@ export async function getTeamId(team_number: string): Promise<number | null> {
   const new_params = { number: team_number, registered: true };
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    const team_id: number = response.data.data[0]?.id;
+    const team_id: number = response.data[0]?.id;
     if (!team_id) {
       console.warn("Warning: No id could be found");
       return null;
@@ -86,9 +91,8 @@ export async function getTeamObject(team_id: number): Promise<any | null> {
   };
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers);
+    const team = await apiCall(url, new_headers);
 
-    const team = response.data;
     if (!team) {
       console.warn("Warning: No team could be found");
       return null;
@@ -110,9 +114,9 @@ export async function getTeamSeasonId(team_id: number): Promise<number | null> {
   const new_params = { team: team_id, active: true };
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    const season_id: number = response.data.data[0]?.id;
+    const season_id: number = response.data[0]?.id;
     if (!season_id) {
       console.warn("Warning: No season id could be found");
       return null;
@@ -136,18 +140,18 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
   const team_awards: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    team_awards.push(...response.data.data);
+    team_awards.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
       const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      team_awards.push(...nextPageResponse.data.data);
+      team_awards.push(...nextPageResponse.data);
     }
 
     return team_awards.filter((event, index, self) => {
@@ -170,18 +174,18 @@ export async function getTeamEvents(team_id: number, season_id?: number): Promis
   const team_events: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    team_events.push(...response.data.data);
+    team_events.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
       const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      team_events.push(...nextPageResponse.data.data);
+      team_events.push(...nextPageResponse.data);
     }
 
     return team_events.filter((event, index, self) => {
@@ -204,18 +208,18 @@ export async function getTeamMatches(team_id: number, event_id: string): Promise
   const team_matches: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    team_matches.push(...response.data.data);
+    team_matches.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
-      const nextPageResponse: AxiosResponse<any> = await apiCall(next_page_url, new_headers, new_params);
+      const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      team_matches.push(...nextPageResponse.data.data);
+      team_matches.push(...nextPageResponse.data);
     }
 
     return team_matches;
@@ -236,18 +240,18 @@ export async function getTeamSkills(team_id: number, seasonId?: number): Promise
   const skills: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    skills.push(...response.data.data);
+    skills.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
-      const nextPageResponse: AxiosResponse<any> = await apiCall(next_page_url, new_headers, new_params);
+      const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      skills.push(...nextPageResponse.data.data);
+      skills.push(...nextPageResponse.data);
     }
 
     return skills;
@@ -266,9 +270,9 @@ export async function getEventDivisions(event_id: number): Promise<number[] | nu
   const new_params = { event: event_id };
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    const divisions = response.data?.divisions;
+    const divisions = response.divisions;
 
     if (!divisions) {
       console.warn("Warning: No divisions could be found");
@@ -293,18 +297,18 @@ export async function getEvents(seasonId: number) {
   const events: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    events.push(...response.data.data);
+    events.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
-      const nextPageResponse: AxiosResponse<any> = await apiCall(next_page_url, new_headers, new_params);
+      const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      events.push(...nextPageResponse.data.data);
+      events.push(...nextPageResponse.data);
     }
 
     return events;
@@ -331,18 +335,18 @@ export async function getEventMatches(
   const division_matches: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers, new_params);
+    const response = await apiCall(url, new_headers, new_params);
 
-    division_matches.push(...response.data.data);
+    division_matches.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
-      const nextPageResponse: AxiosResponse<any> = await apiCall(next_page_url, new_headers, new_params);
+      const nextPageResponse = await apiCall(next_page_url, new_headers, new_params);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      division_matches.push(...nextPageResponse.data.data);
+      division_matches.push(...nextPageResponse.data);
     }
 
     return division_matches;
@@ -362,18 +366,18 @@ export async function getEventTeams(event_id: number) {
   const event_teams: any[] = [];
 
   try {
-    const response: AxiosResponse<any> = await apiCall(url, new_headers);
+    const response = await apiCall(url, new_headers);
 
-    event_teams.push(...response.data.data);
+    event_teams.push(...response.data);
 
-    let next_page_url = response.data.meta.next_page_url;
+    let next_page_url = response.meta.next_page_url;
 
     while (next_page_url) {
-      const nextPageResponse: AxiosResponse<any> = await apiCall(next_page_url, new_headers);
+      const nextPageResponse = await apiCall(next_page_url, new_headers);
 
-      next_page_url = nextPageResponse.data.meta.next_page_url;
+      next_page_url = nextPageResponse.meta.next_page_url;
 
-      event_teams.push(...nextPageResponse.data.data);
+      event_teams.push(...nextPageResponse.data);
     }
 
     return event_teams;

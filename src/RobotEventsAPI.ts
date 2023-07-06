@@ -7,20 +7,24 @@ dotenv.config();
 const API_KEY: string = process.env.ROBOT_EVENTS_TOKEN as string;
 
 const throttler = new Bottleneck({
+  reservoir: 100,
+  reservoirRefreshAmount: 100,
+  reservoirRefreshInterval: 60 * 1000,
+
   maxConcurrent: 1,
-  minTime: 800,
+  minTime: 250,
 });
 
 
 async function apiCall(url: string, headers: object, params?: object): Promise<any> {
   try {
-    console.log(`Making API call to ${url}`);
     const response: Response = await throttler.schedule(() =>
       fetch(url, {
         method: 'GET',
         headers: {...headers},
       }
     ));
+    console.log(`Made API call to ${url} with params ${JSON.stringify(params)} with rate ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
 
     if (response.status === 429) {
       const wait_time: number = parseInt(response.headers.get("retry-after") || "5") + 1;

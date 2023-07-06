@@ -2,16 +2,26 @@
   "compilerOptions": {
     "module": "es2015",
     "target": "es2015",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "node",
     "sourceMap": true,
-      "lib": [
-          "dom",
-          "es5",
-          "scripthost",
-          "es2015.promise"
-      ]
+    "lib": [
+        "dom",
+        "es5",
+        "scripthost",
+        "es2015.promise"
+    ],
+    "rootDir": "src",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "strictNullChecks": true
   },
-    "include": [
-        "src/**/*"
-    ]
+  "ts-node": {
+    "esm": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -23,8 +23,8 @@ import { rating, rate, ordinal } from 'openskill'
 
 export class Team {
   teamNumber: string;
-  teamId: number | Promise<number | null>;
-  seasonId: number | Promise<number | null>;
+  teamId: number;
+  seasonId: number;
 
   teamName: string;
   robotName: string;
@@ -74,8 +74,8 @@ export class Team {
 
   constructor(
     teamNumber: string,
-    teamId: number | Promise<number | null>,
-    seasonId: number | Promise<number | null>
+    teamId: number,
+    seasonId: number
   ) {
     const existingTeam = Team.teams.find((team) => team.teamId === teamId);
 
@@ -163,7 +163,7 @@ export class Team {
 
     if (!this.REDataFilled) {
       this.REDataFilled = true;
-      const teamObject = await getTeamObject(await this.teamId);
+      const teamObject = await getTeamObject(this.teamId);
 
       if (teamObject) {
         this.teamName = teamObject.team_name;
@@ -175,7 +175,7 @@ export class Team {
         this.teamCountry = teamObject.location.country;
       }
 
-      const teamAwards = await getTeamAwards(await this.teamId, await this.seasonId);
+      const teamAwards = await getTeamAwards(this.teamId, this.seasonId);
 
       if (teamAwards) {
         const qualToRegionals = teamAwards.some((award) =>
@@ -191,7 +191,7 @@ export class Team {
         this.awardQualToWorlds = awardQualToWorlds;
       }
 
-      const teamSkills = await getTeamSkills(await this.teamId, await this.seasonId);
+      const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
 
       if (teamSkills && teamSkills.length > 0) {
         const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
@@ -221,15 +221,6 @@ export class Team {
     }
   }
 
-
-    // trueskill_rank: team_data.trueskill_rank,
-    // trueskill_rank_in_region: team_data.trueskill_rank_in_region,
-
-    // total_skills_ranking: team_data.total_skills_ranking,
-
-    // autonomous_points_per_match: team_data.autonomous_points_per_match,
-    // autonomous_win_points_per_match: team_data.autonomous_win_points_per_match,
-
   static async populateAllTeams() {
     const promises: Promise<void>[] = [];
 
@@ -239,7 +230,6 @@ export class Team {
 
     await Promise.all(promises);
 
-    // rank teams by trueskill and top total skills
     const openSkillSorted = this.teams.sort((teamA, teamB) => {
       return teamB.openSkill - teamA.openSkill;
     });
@@ -342,7 +332,7 @@ class Event {
   eventCode: string;
   eventId: number;
   seasonId: number;
-  divisions: Promise<number[]>;
+  divisions: Promise<number[] | null>;
 
   constructor(eventCode: string, eventId: number, seasonId: number) {
     this.eventCode = eventCode;
@@ -392,7 +382,7 @@ class Event {
 export const calcCumulativeStats = async (seasonId: number) => {
   const seasonEvents = await getEvents(seasonId);
 
-  const DBMetaData: MetadataDocumentType = await MetadataDocument.findOne({})
+  const DBMetaData: MetadataDocumentType | null = await MetadataDocument.findOne({})
 
 
   if (!seasonEvents || !DBMetaData) {
@@ -416,13 +406,19 @@ export const calcCumulativeStats = async (seasonId: number) => {
   });
 
   // const events: Event[] = [
-  //   new Event("RE-VRC-22-9506", 49506, 173),
-  //   // new Event("RE-VRC-22-8473", 48473, 173),
+  //   // new Event("RE-VRC-22-9506", 49506, 173),
+  //   new Event("RE-VRC-22-8473", 48473, 173),
   // ];
 
   await Promise.all(events.map(async (event) => {
+    const eventDivisions = await event.divisions;
+
+    if (!eventDivisions || eventDivisions.length === 0) {
+      return;
+    }
+
     console.log(`Processing ${event.eventCode}...`);
-    await Promise.all((await event.divisions).map(async (division) => {
+    await Promise.all(eventDivisions.map(async (division) => {
       const matches: Match[] = await event.getMatches(division)
 
       if (matches.length < 4) {

@@ -1,16 +1,24 @@
 {
+  "name": "gaelscout",
   "type": "module",
+  "scripts": {
+    "start": "ts-node dist/server.js",
+    "build": "tsc",
+    "dev": "ts-node src/server.ts"
+  },
   "dependencies": {
     "bottleneck": "^2.19.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^6.7.0",
+    "node-fetch": "^3.3.1",
     "mathjs": "^11.8.2",
     "mongoose": "^7.3.1",
     "openskill": "^3.1.0",
     "vhost": "^3.0.2"
   },
   "devDependencies": {
-    "@types/node": "^20.3.3"
+    "@types/node": "^20.3.3",
+    "ts-node": "^10.9.1"
   }
 }

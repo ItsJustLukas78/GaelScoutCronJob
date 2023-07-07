@@ -9,7 +9,8 @@ import {
   getTeamObject,
   getTeamAwards,
   getEvents,
-  getEventDivisions, getTeamSkills,
+  getEventDivisions,
+  getTeamSkills,
 } from "./RobotEventsAPI.js";
 import {
   TeamDocument,
@@ -20,6 +21,7 @@ import {
   MetadataDocument,
 } from "./models/Metadata.js";
 import { rating, rate, ordinal } from 'openskill'
+import { logger } from "./server.js";
 
 export class Team {
   teamNumber: string;
@@ -230,11 +232,11 @@ export class Team {
 
     await Promise.all(promises);
 
-    const openSkillSorted = this.teams.sort((teamA, teamB) => {
+    const openSkillSorted = [...this.teams].sort((teamA, teamB) => {
       return teamB.openSkill - teamA.openSkill;
     });
 
-    const topSkillsSorted = this.teams.sort((teamA, teamB) => {
+    const topSkillsSorted = [...this.teams].sort((teamA, teamB) => {
       return teamB.topTotalSkills - teamA.topTotalSkills;
     });
 
@@ -252,6 +254,7 @@ export class Team {
       await this.populateAllTeams();
       teams = this.teams;
     }
+    logger.info("STORING TEAMS IN DB");
     await Promise.all(teams.map(async (team) => {
       await TeamDocument.findOneAndUpdate({ teamId: team.teamId }, {
         teamId: team.teamId,
@@ -406,7 +409,7 @@ export const calcCumulativeStats = async (seasonId: number): Promise<Date> => {
   });
 
   // const events: Event[] = [
-  //   // new Event("RE-VRC-22-9506", 49506, 173),
+  //   new Event("RE-VRC-22-9506", 49506, 173),
   //   new Event("RE-VRC-22-8473", 48473, 173),
   // ];
 
@@ -417,7 +420,7 @@ export const calcCumulativeStats = async (seasonId: number): Promise<Date> => {
       return;
     }
 
-    console.log(`Processing ${event.eventCode}...`);
+    logger.info(`Processing ${event.eventCode}...`);
     await Promise.all(eventDivisions.map(async (division) => {
       const matches: Match[] = await event.getMatches(division)
 
@@ -523,8 +526,8 @@ export const calcCumulativeStats = async (seasonId: number): Promise<Date> => {
           team.eventCount++;
         }
       } catch (e) {
-        console.log(e)
-        console.log(`Couldn't analyze ${event.eventCode} - division ${division}`)
+        logger.warn(e)
+        logger.warn(`Couldn't analyze ${event.eventCode} - division ${division}`)
       }
     }));
   }));

@@ -1,20 +1,16 @@
 import Bottleneck from "bottleneck";
 import * as dotenv from "dotenv";
 import fetch, { Response } from 'node-fetch';
+import { logger } from "./server.js";
 
 dotenv.config();
 
 const API_KEY: string = process.env.ROBOT_EVENTS_TOKEN as string;
 
 const throttler = new Bottleneck({
-  reservoir: 95,
-  reservoirRefreshAmount: 95,
-  reservoirRefreshInterval: 60 * 1000,
-
   maxConcurrent: 1,
-  minTime: 250,
+  minTime: 605,
 });
-
 
 async function apiCall(url: string, headers: object, params?: object): Promise<any> {
   try {
@@ -24,16 +20,19 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
         headers: {...headers},
       }
     ));
-    console.log(`Made API call to ${url} with params ${JSON.stringify(params)} with rate ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
 
     if (response.status === 429) {
       const wait_time: number = parseInt(response.headers.get("retry-after") || "5") + 1;
-      console.log(`Sleeping for ${wait_time} seconds`);
+      logger.warn(`Sleeping for ${wait_time} seconds`);
       await new Promise((resolve) => setTimeout(resolve, wait_time * 1000));
       return apiCall(url, headers, params);
     }
 
-    return await response.json();
+    const json = await response.json();
+
+    logger.info(`API call: ${url} - Params: ${JSON.stringify(params)} - Rate: ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
+
+    return json;
   } catch (error) {
     throw error;
   }
@@ -52,13 +51,13 @@ export async function getEventId(event_code: string): Promise<number | null> {
 
     const team_id: number = response.data[0]?.id;
     if (!team_id) {
-      console.warn("Warning: No id could be found");
+      logger.warn("Warning: No id could be found");
       return null;
     }
 
     return team_id;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return null;
   }
 }
@@ -76,13 +75,13 @@ export async function getTeamId(team_number: string): Promise<number | null> {
 
     const team_id: number = response.data[0]?.id;
     if (!team_id) {
-      console.warn("Warning: No id could be found");
+      logger.warn("Warning: No id could be found");
       return null;
     }
 
     return team_id;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return null;
   }
 }
@@ -98,13 +97,13 @@ export async function getTeamObject(team_id: number): Promise<any | null> {
     const team = await apiCall(url, new_headers);
 
     if (!team) {
-      console.warn("Warning: No team could be found");
+      logger.warn("Warning: No team could be found");
       return null;
     }
 
     return team;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return null;
   }
 }
@@ -122,13 +121,13 @@ export async function getTeamSeasonId(team_id: number): Promise<number | null> {
 
     const season_id: number = response.data[0]?.id;
     if (!season_id) {
-      console.warn("Warning: No season id could be found");
+      logger.warn("Warning: No season id could be found");
       return null;
     }
 
     return season_id;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return null;
   }
 }
@@ -162,7 +161,7 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
       return index === self.findIndex((t) => t.id === event.id);
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -196,7 +195,7 @@ export async function getTeamEvents(team_id: number, season_id?: number): Promis
       return index === self.findIndex((t) => t.id === event.id);
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -228,7 +227,7 @@ export async function getTeamMatches(team_id: number, event_id: string): Promise
 
     return team_matches;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -260,7 +259,7 @@ export async function getTeamSkills(team_id: number, seasonId?: number): Promise
 
     return skills;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -279,13 +278,13 @@ export async function getEventDivisions(event_id: number): Promise<number[] | nu
     const divisions = response.divisions;
 
     if (!divisions) {
-      console.warn("Warning: No divisions could be found");
+      logger.warn("Warning: No divisions could be found");
       return null;
     }
 
     return divisions.map((division: any) => division.id);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return null;
   }
 }
@@ -317,7 +316,7 @@ export async function getEvents(seasonId: number) {
 
     return events;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -355,7 +354,7 @@ export async function getEventMatches(
 
     return division_matches;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return [];
   }
 }
@@ -386,7 +385,6 @@ export async function getEventTeams(event_id: number) {
 
     return event_teams;
   } catch (error) {
-    console.error(error);
     return [];
   }
 }

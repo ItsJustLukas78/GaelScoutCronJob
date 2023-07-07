@@ -6,9 +6,23 @@ import * as dotenv from 'dotenv';
 import teamRouter from "./routes/teams.js";
 import { calcCumulativeStats, Team } from "./dataFill.js";
 import { MetadataDocument } from "./models/Metadata.js";
+import swaggerUi from 'swagger-ui-express';
+import winston from 'winston';
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const swaggerDocument = require("./public/swagger-output.json");
+
 // const { auth, requiredScopes } = require('express-oauth2-jwt-bearer');
 
 dotenv.config();
+
+const { combine, errors } = winston.format;
+export const logger = winston.createLogger({
+  level: 'info',
+  format: combine(errors({ stack: true }), winston.format.cli()),
+  transports: [new winston.transports.Console()],
+});
 
 const mainApp = express();
 
@@ -24,15 +38,18 @@ mainApp.use(vhost('api.*.*', apiApp));
 
 // apiApp.use(jwtCheck);
 
+mainApp.get('/', (req: Request, res: Response) => {
+  res.json({ message: 'Hello from the main app!' });
+});
+
 apiApp.use('/teams', teamRouter);
 
 apiApp.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Hello from the API!' });
 });
 
-mainApp.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Hello from the main app!' });
-});
+apiApp.use('/docs', swaggerUi.serve);
+apiApp.get('/docs', swaggerUi.setup(swaggerDocument));
 
 async function run() {
   await connect(process.env.MONGO_URI as string);
@@ -50,11 +67,12 @@ async function run() {
     });
   }
 
-  console.log("STARTING ANALYSIS")
+  logger.info("STARTING ANALYSIS")
   const startAnalysis = performance.now();
 
   const latestTeamsUpdate = await calcCumulativeStats(173)
   // await calcCumulativeStats(173)
+  // await Team.populateAllTeams();
   await Team.storeTeamsInDB();
 
   DBMetadData.latestTeamsUpdate = latestTeamsUpdate;
@@ -62,7 +80,7 @@ async function run() {
 
   const endAnalysis = performance.now();
 
-  console.log(`DONE ANALYZING TEAM DATA IN ${endAnalysis - startAnalysis} ms`);
+  logger.info(`DONE ANALYZING TEAM DATA IN ${endAnalysis - startAnalysis} ms`);
 }
 
 run();

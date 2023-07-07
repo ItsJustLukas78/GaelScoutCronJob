@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "module": "es2015",
-    "target": "es2015",
+    "module": "es2022",
+    "target": "es2022",
     "moduleResolution": "node",
     "sourceMap": true,
+    "resolveJsonModule": true,
     "lib": [
         "dom",
         "es5",

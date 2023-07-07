@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "start": "ts-node dist/server.js",
-    "build": "tsc",
+    "build": "tsc && cp -r src/public dist/public",
     "dev": "ts-node src/server.ts",
     "swagger-autogen": "ts-node src/swagger.ts"
   },

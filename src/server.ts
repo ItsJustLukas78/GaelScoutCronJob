@@ -67,6 +67,9 @@ async function run() {
     });
   }
 
+  // wait for 10 seconds to allow for the server to start up
+  await new Promise(resolve => setTimeout(resolve, 10000));
+
   logger.info("STARTING ANALYSIS")
   const startAnalysis = performance.now();
 

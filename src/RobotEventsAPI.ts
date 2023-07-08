@@ -17,6 +17,8 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
     let parametrized_url: string = url;
 
     if (params) {
+      Object.keys(params).forEach(key => params[key] == null && delete params[key]);
+
       const searchParams = new URLSearchParams(params as any);
       parametrized_url += (url.includes('?') ? '&' : '?') + searchParams.toString();
     }
@@ -37,7 +39,7 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
 
     const json = await response.json();
 
-    // logger.info(`API call: ${url} - Params: ${JSON.stringify(params)} - Rate: ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
+    logger.info(`API call: ${url} - Params: ${JSON.stringify(params)} - Rate: ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
 
     return json;
   } catch (error) {
@@ -146,7 +148,7 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
   };
-  const new_params = { season: season_id ? season_id : {} };
+  const new_params = { season: season_id ? season_id : null };
 
   const team_awards: any[] = [];
 
@@ -180,7 +182,7 @@ export async function getTeamEvents(team_id: number, season_id?: number): Promis
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
   };
-  const new_params = { season: season_id ? season_id : {}};
+  const new_params = { season: season_id ? season_id : null};
 
   const team_events: any[] = [];
 
@@ -341,7 +343,7 @@ export async function getEventMatches(
     "Authorization": "Bearer " + API_KEY,
   };
 
-  const new_params = { round: round ? round : {}, matchnum: matchnum ? matchnum : {} };
+  const new_params = { round: round ? round : null, matchnum: matchnum ? matchnum : null };
 
   const division_matches: any[] = [];
 

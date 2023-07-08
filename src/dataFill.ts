@@ -112,7 +112,11 @@ export class TeamSeasonProfile {
       });
     }
 
-    existingTeamSeasonProfile = await SeasonProfileDocument.findOne({ teamId: teamId, seasonId: seasonId }).lean();
+    existingTeamSeasonProfile = await SeasonProfileDocument.findOneAndUpdate(
+      { teamId: teamId, seasonId: seasonId },
+      { teamDocument: existingTeamProfile._id },
+      { new: true }
+    );
 
     if (!existingTeamSeasonProfile) {
       existingTeamSeasonProfile = (await SeasonProfileDocument.create({
@@ -151,9 +155,9 @@ export class TeamSeasonProfile {
     }
 
     const teamSeasonProfileTemplate = {
-      teamNumber: existingTeamSeasonProfile.number,
       teamName: existingTeamSeasonProfile.teamName,
       teamId: existingTeamSeasonProfile.teamId,
+      teamNumber: existingTeamSeasonProfile.teamNumber,
       seasonId: existingTeamSeasonProfile.seasonId,
       seasonName: existingTeamSeasonProfile.seasonName,
       teamOrg: existingTeamSeasonProfile.teamOrg,
@@ -225,7 +229,9 @@ export class TeamSeasonProfile {
         qualToRegionals: this.qualToRegionals,
         awardQualToWorlds: this.awardQualToWorlds,
       },
-      { upsert: true }
+      {
+        upsert: true
+      }
     );
 
     return;
@@ -646,15 +652,15 @@ export const calcCumulativeStats = async (seasonId: number) => {
         const oprMatrix = multiply(matchTeamsPseudoInverse, matchScoresMatrix);
         const dprMatrix = multiply(matchTeamsPseudoInverse, matchOpponentScoresMatrix);
 
-        for (let i = 0; i < oprMatrix.size()[0]; i++) {
-          const team: TeamSeasonProfile | null = playingTeams[i];
+        for (let j = 0; j < oprMatrix.size()[0]; j++) {
+          const team: TeamSeasonProfile | null = playingTeams[j];
 
           if (!team) {
             continue;
           }
 
-          const opr: number = +oprMatrix.get([i]).toFixed(4);
-          const dpr: number = +dprMatrix.get([i]).toFixed(4);
+          const opr: number = +oprMatrix.get([j]).toFixed(4);
+          const dpr: number = +dprMatrix.get([j]).toFixed(4);
 
           team.oprCum += opr;
           team.dprCum += dpr;

@@ -94,6 +94,10 @@ export class TeamSeasonProfile {
 
     const teamObject = await getTeamObject(teamId);
 
+    if (!teamObject) {
+      return null;
+    }
+
     if (!existingTeamProfile) {
       existingTeamProfile = await TeamProfileDocument.create({
         teamId: teamId,
@@ -363,16 +367,17 @@ class Match {
   redScore: number;
   blueScore: number;
 
-  redTeams: TeamSeasonProfile[];
-  blueTeams: TeamSeasonProfile[];
+  // RE can return a non-existant team in a match
+  redTeams: (TeamSeasonProfile | null)[];
+  blueTeams: (TeamSeasonProfile | null)[];
 
   roundType: number;
 
   constructor(
     redScore: number,
     blueScore: number,
-    redTeams: TeamSeasonProfile[],
-    blueTeams: TeamSeasonProfile[],
+    redTeams: (TeamSeasonProfile | null)[],
+    blueTeams: (TeamSeasonProfile | null)[],
     roundType: number
   ) {
     this.redScore = redScore;
@@ -406,8 +411,8 @@ class Event {
     const matchObjects: Match[] = [];
 
     for (const match of matches) {
-      const redTeams: TeamSeasonProfile[] = [];
-      const blueTeams: TeamSeasonProfile[] = [];
+      const redTeams: (TeamSeasonProfile | null)[] = [];
+      const blueTeams: (TeamSeasonProfile | null)[] = [];
 
       let redScore: number = 0;
       let blueScore: number = 0;
@@ -418,14 +423,14 @@ class Event {
         if (alliance.color === "red") {
           redScore = alliance.score;
           await Promise.all(alliance.teams.map(async (team) => {
-            const teamObject: TeamSeasonProfile =
+            const teamObject: TeamSeasonProfile | null =
               await TeamSeasonProfile.getTeamSeasonProfile(team.team.id, this.seasonId, this.seasonName);
             redTeams.push(teamObject);
           }))
         } else if (alliance.color === "blue") {
           blueScore = alliance.score;
           await Promise.all(alliance.teams.map(async (team) => {
-            const teamObject: TeamSeasonProfile =
+            const teamObject: TeamSeasonProfile | null =
               await TeamSeasonProfile.getTeamSeasonProfile(team.team.id, this.seasonId, this.seasonName);
             blueTeams.push(teamObject);
           }))
@@ -493,11 +498,19 @@ export const calcCumulativeStats = async (seasonId: number) => {
         continue;
       }
 
-      const playingTeams: TeamSeasonProfile[] = [];
+      const playingTeams: (TeamSeasonProfile | null)[] = [];
 
       matches.forEach((match) => {
-        [...match.redTeams, ...match.blueTeams].forEach((team: TeamSeasonProfile) => {
-          if (!playingTeams.some((existingTeam): boolean => existingTeam.teamId === team.teamId)) {
+        [...match.redTeams, ...match.blueTeams].forEach((team: TeamSeasonProfile | null) => {
+          if (!team) {
+            return null;
+          }
+
+          const existingTeam = !playingTeams.some((existingTeam: TeamSeasonProfile | null): boolean => {
+            return (existingTeam != null && existingTeam.teamId === team.teamId)
+          });
+
+          if (existingTeam) {
             playingTeams.push(team);
           }
         });
@@ -513,7 +526,11 @@ export const calcCumulativeStats = async (seasonId: number) => {
           const winningTeams = match.redScore > match.blueScore ? match.redTeams : match.blueTeams;
           const losingTeams = match.redScore > match.blueScore ? match.blueTeams : match.redTeams;
 
-          winningTeams.forEach(async (team: TeamSeasonProfile) => {
+          winningTeams.forEach(async (team: TeamSeasonProfile | null) => {
+            if (!team) {
+              return;
+            }
+
             if (match.roundType === 2) {
               team.qualMatchWins++;
               team.qualMatchCount++;
@@ -523,7 +540,11 @@ export const calcCumulativeStats = async (seasonId: number) => {
             }
           })
 
-          losingTeams.forEach(async (team: TeamSeasonProfile) => {
+          losingTeams.forEach(async (team: TeamSeasonProfile | null) => {
+            if (!team) {
+              return;
+            }
+
             if (match.roundType === 2) {
               team.qualMatchLosses++;
               team.qualMatchCount++;
@@ -534,33 +555,78 @@ export const calcCumulativeStats = async (seasonId: number) => {
           })
 
           const winningRatings = winningTeams.map(team => {
+            if (!team) {
+              return rating();
+            }
             return rating({mu: team.mu, sigma: team.sigma});
           });
 
           const losingRatings = losingTeams.map(team => {
+            if (!team) {
+              return rating();
+            }
             return rating({mu: team.mu, sigma: team.sigma});
           });
 
           const newRatings = rate([winningRatings, losingRatings]);
 
           winningTeams.forEach((team, index) => {
+            if (!team) {
+              return;
+            }
+
             team.mu = newRatings[0][index].mu;
             team.sigma = newRatings[0][index].sigma;
           });
 
           losingTeams.forEach((team, index) => {
+            if (!team) {
+              return;
+            }
+
             team.mu = newRatings[1][index].mu;
             team.sigma = newRatings[1][index].sigma;
           });
 
-          const redRow = playingTeams.map(team =>
-            match.redTeams.some((redTeam: TeamSeasonProfile) => {
-              return redTeam.teamId === team.teamId;
-            }) ? 1 : 0);
-          const blueRow = playingTeams.map(team =>
-            match.blueTeams.some((blueTeam: TeamSeasonProfile) => {
-              return blueTeam.teamId === team.teamId;
-            }) ? 1 : 0);
+          const redRow = playingTeams.map((team: TeamSeasonProfile | null)  => {
+            if (!team) {
+              return 0;
+            }
+
+            const teamHere = match.redTeams.some((redTeam: TeamSeasonProfile | null) => {
+              if (!redTeam) {
+                return false;
+              } else {
+                return redTeam.teamId === team.teamId
+              }
+            })
+
+            if (teamHere) {
+              return 1;
+            } else {
+              return 0;
+            }
+          });
+
+          const blueRow = playingTeams.map((team: TeamSeasonProfile | null)  => {
+            if (!team) {
+              return 0;
+            }
+
+            const teamHere = match.blueTeams.some((blueTeam: TeamSeasonProfile | null) => {
+              if (!blueTeam) {
+                return false;
+              } else {
+                return blueTeam.teamId === team.teamId
+              }
+            })
+
+            if (teamHere) {
+              return 1;
+            } else {
+              return 0;
+            }
+          });
 
           matchScoresMatrix = matrix(
             concat(matchScoresMatrix, [match.redScore], [match.blueScore], 0)
@@ -581,7 +647,11 @@ export const calcCumulativeStats = async (seasonId: number) => {
         const dprMatrix = multiply(matchTeamsPseudoInverse, matchOpponentScoresMatrix);
 
         for (let i = 0; i < oprMatrix.size()[0]; i++) {
-          const team: TeamSeasonProfile = playingTeams[i];
+          const team: TeamSeasonProfile | null = playingTeams[i];
+
+          if (!team) {
+            continue;
+          }
 
           const opr: number = +oprMatrix.get([i]).toFixed(4);
           const dpr: number = +dprMatrix.get([i]).toFixed(4);

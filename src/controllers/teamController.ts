@@ -1,38 +1,31 @@
 import { Request, Response } from 'express';
-import { TeamDocument, TeamDocumentType } from '../models/Team.js';
-
-async function formatTeamDocument(teamDocument: TeamDocumentType) {
+import { SeasonProfileDocument, SeasonProfileDocumentType } from '../models/SeasonProfile.js';
+async function formatTeamDocument(seasonProfile: SeasonProfileDocumentType) {
   return {
-    teamId: teamDocument.teamId,
-    teamName: teamDocument.teamName,
-    teamNumber: teamDocument.teamNumber,
-    robotName: teamDocument.robotName,
-    teamGrade: teamDocument.teamGrade,
-    teamOrg: teamDocument.teamOrg,
-    teamCity: teamDocument.teamCity,
-    teamRegion: teamDocument.teamRegion,
-    teamCountry: teamDocument.teamCountry,
-    opr: teamDocument.opr,
-    dpr: teamDocument.dpr,
-    ccwm: teamDocument.ccwm,
-    openSkill: teamDocument.openSkill,
-    openSkillRank: teamDocument.openSkillRank,
-    eventCount: teamDocument.eventCount,
-    topProgSkills: teamDocument.topProgSkills,
-    topDriverSkills: teamDocument.topDriverSkills,
-    topTotalSkills: teamDocument.topTotalSkills,
-    skillsRank: teamDocument.skillsRank,
-    qualMatchCount: teamDocument.qualMatchCount,
-    elimMatchCount: teamDocument.elimMatchCount,
-    qualMatchWins: teamDocument.qualMatchWins,
-    elimMatchWins: teamDocument.elimMatchWins,
-    qualMatchLosses: teamDocument.qualMatchLosses,
-    elimMatchLosses: teamDocument.elimMatchLosses,
-    qualMatchWinPercentage: teamDocument.qualMatchWinPercentage,
-    elimMatchWinPercentage: teamDocument.elimMatchWinPercentage,
-    totalMatchWinPercentage: teamDocument.totalMatchWinPercentage,
-    qualToRegionals: teamDocument.qualToRegionals,
-    awardQualToWorlds: teamDocument.awardQualToWorlds,
+    teamId: seasonProfile.teamId,
+    teamName: seasonProfile.teamName,
+    teamNumber: seasonProfile.teamNumber,
+    opr: seasonProfile.opr,
+    dpr: seasonProfile.dpr,
+    ccwm: seasonProfile.ccwm,
+    openSkill: seasonProfile.openSkill,
+    openSkillRank: seasonProfile.openSkillRank,
+    eventCount: seasonProfile.eventCount,
+    topProgSkills: seasonProfile.topProgSkills,
+    topDriverSkills: seasonProfile.topDriverSkills,
+    topTotalSkills: seasonProfile.topTotalSkills,
+    skillsRank: seasonProfile.skillsRank,
+    qualMatchCount: seasonProfile.qualMatchCount,
+    elimMatchCount: seasonProfile.elimMatchCount,
+    qualMatchWins: seasonProfile.qualMatchWins,
+    elimMatchWins: seasonProfile.elimMatchWins,
+    qualMatchLosses: seasonProfile.qualMatchLosses,
+    elimMatchLosses: seasonProfile.elimMatchLosses,
+    qualMatchWinPercentage: seasonProfile.qualMatchWinPercentage,
+    elimMatchWinPercentage: seasonProfile.elimMatchWinPercentage,
+    totalMatchWinPercentage: seasonProfile.totalMatchWinPercentage,
+    qualToRegionals: seasonProfile.qualToRegionals,
+    awardQualToWorlds: seasonProfile.awardQualToWorlds,
   }
 }
 
@@ -44,9 +37,9 @@ export async function getAllTeams(req: Request, res: Response) {
     return;
   }
 
-  const teams = await TeamDocument.find({ seasonId: seasonId});
+  const teams = await SeasonProfileDocument.find({ seasonId: seasonId });
 
-  const formattedTeams = await Promise.all(teams.map(async (team: TeamDocumentType) => {
+  const formattedTeams = await Promise.all(teams.map(async (team: SeasonProfileDocumentType) => {
     return await formatTeamDocument(team);
   }));
 
@@ -65,7 +58,7 @@ export async function getTeam(req: Request, res: Response) {
     return;
   }
 
-  const team = await TeamDocument.findOne({ teamNumber: teamNumber, seasonId: seasonId });
+  const team = await SeasonProfileDocument.findOne({ teamNumber: teamNumber, seasonId: seasonId });
 
   if (!team) {
     res.status(404).json({ error: 'Team not found' });

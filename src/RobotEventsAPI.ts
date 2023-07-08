@@ -34,7 +34,8 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
 
     return json;
   } catch (error) {
-    throw error;
+    logger.error(error);
+    return null;
   }
 }
 
@@ -295,7 +296,7 @@ export async function getEvents(seasonId: number) {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
   };
-  const new_params = { season: seasonId };
+  const new_params = { season: seasonId, eventTypes: "tournament" };
 
   const events: any[] = [];
 
@@ -386,5 +387,27 @@ export async function getEventTeams(event_id: number) {
     return event_teams;
   } catch (error) {
     return [];
+  }
+}
+
+export async function getSeason(seasonId: number) {
+  const url = `https://www.robotevents.com/api/v2/seasons/${seasonId}`;
+  const new_headers = {
+    "accept": "application/json",
+    "Authorization": "Bearer " + API_KEY,
+  };
+
+  try {
+    const response = await apiCall(url, new_headers);
+
+    if (!response) {
+      logger.warn("Warning: No Season could be found");
+      return null;
+    }
+
+    return response;
+  } catch (error) {
+    logger.error(error);
+    return null;
   }
 }

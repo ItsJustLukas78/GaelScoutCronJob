@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import vhost from 'vhost';
 import * as dotenv from 'dotenv';
 import teamRouter from "./routes/teams.js";
-import { calcCumulativeStats, Team } from "./dataFill.js";
+import {calcCumulativeStats, TeamSeasonProfile} from "./dataFill.js";
 import { MetadataDocument } from "./models/Metadata.js";
 import swaggerUi from 'swagger-ui-express';
 import winston from 'winston';
@@ -70,13 +70,19 @@ async function run() {
   logger.info("STARTING ANALYSIS")
   const startAnalysis = performance.now();
 
-  const latestTeamsUpdate = await calcCumulativeStats(173)
-  // await calcCumulativeStats(173)
-  // await Team.populateAllTeams();
-  await Team.storeTeamsInDB();
+  await calcCumulativeStats(173);
 
-  DBMetadData.latestTeamsUpdate = latestTeamsUpdate;
-  await DBMetadData.save();
+  logger.info("POPULATING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.populateAllTeams();
+
+  logger.info("STORING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.storeTeamSeasonProfiles();
+
+  logger.info("PERFORMING SEASON RANKINGS");
+  await TeamSeasonProfile.performSeasonRankings(173);
+
+  logger.info("CLEARING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.clearTeamSeasonProfilesObjects()
 
   const endAnalysis = performance.now();
 

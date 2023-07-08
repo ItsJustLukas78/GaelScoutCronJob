@@ -1,16 +1,12 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Types } from 'mongoose';
 
-export interface TeamDocumentType {
+export interface SeasonProfileDocumentType {
+    teamDocument: Types.ObjectId;
     teamId: number;
     teamName: string;
     teamNumber: string;
     seasonId: number;
-    robotName: string;
-    teamGrade: string;
-    teamOrg: string;
-    teamCity: string;
-    teamRegion: string;
-    teamCountry: string;
+    seasonName: string;
     mu: number;
     sigma: number;
     openSkill: number;
@@ -38,17 +34,17 @@ export interface TeamDocumentType {
     awardQualToWorlds: boolean;
 }
 
-const teamSchema = new Schema<TeamDocumentType>({
+const seasonProfileSchema = new Schema<SeasonProfileDocumentType>({
+    teamDocument: {
+        type: Schema.Types.ObjectId,
+        ref: 'Team',
+        required: true,
+    },
     teamId: { type: Number, required: true },
     teamName: { type: String, required: true },
     teamNumber: { type: String, required: true },
     seasonId: { type: Number, required: true },
-    robotName: { type: String, required: false },
-    teamGrade: { type: String, required: true },
-    teamOrg: { type: String, required: false },
-    teamCity: { type: String, required: false },
-    teamRegion: { type: String, required: false },
-    teamCountry: { type: String, required: false },
+    seasonName: { type: String, required: true },
     mu: { type: Number, required: true },
     sigma: { type: Number, required: true },
     openSkill: { type: Number, required: true },
@@ -76,5 +72,5 @@ const teamSchema = new Schema<TeamDocumentType>({
     awardQualToWorlds: { type: Boolean, required: true },
 });
 
-export const TeamDocument = model<TeamDocumentType>('Team', teamSchema);
+export const SeasonProfileDocument = model<SeasonProfileDocumentType>('Team', seasonProfileSchema);
 

@@ -490,7 +490,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
       return;
     }
 
-    logger.info(`Processing ${event.eventCode}...`);
+    logger.info(`Processing ${event.eventCode}, ${events.length} remaining...`);
     for (const division of eventDivisions) {
       const matches: Match[] = await event.getMatches(division)
 

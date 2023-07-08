@@ -14,7 +14,13 @@ const throttler = new Bottleneck({
 
 async function apiCall(url: string, headers: object, params?: object): Promise<any> {
   try {
-    const parametrized_url: string = params ? (url + '?' + new URLSearchParams(params as any)) : url;
+    let parametrized_url: string = url;
+
+    if (params) {
+      const searchParams = new URLSearchParams(params as any);
+      parametrized_url += (url.includes('?') ? '&' : '?') + searchParams.toString();
+    }
+
     const response: Response = await throttler.schedule(() =>
       fetch(parametrized_url, {
         method: 'GET',

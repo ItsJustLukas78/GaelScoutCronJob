@@ -487,7 +487,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
     const eventDivisions = event.divisions;
 
     if (!eventDivisions || eventDivisions.length === 0) {
-      return;
+      continue;
     }
 
     logger.info(`Processing ${event.eventCode}, ${events.length} remaining...`);

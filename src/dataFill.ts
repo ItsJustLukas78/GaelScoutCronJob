@@ -451,7 +451,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
   const DBMetaData = await MetadataDocument.findOne({})
 
   if (!seasonEvents || !DBMetaData) {
-    return new Date(0);
+    return;
   }
 
   const newEvents = seasonEvents.filter(async (event) => {
@@ -490,7 +490,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
       const matches: Match[] = await event.getMatches(division)
 
       if (matches.length < 4) {
-        return;
+        continue;
       }
 
       const playingTeams: TeamSeasonProfile[] = [];

@@ -61,7 +61,7 @@ async function run() {
   let DBMetadData = await MetadataDocument.findOne({});
 
   if (!DBMetadData) {
-    DBMetadData = await MetadataDocument.create({
+    await MetadataDocument.create({
       // create date forever ago so that it will be updated
       latestTeamsUpdate: new Date(0),
     });

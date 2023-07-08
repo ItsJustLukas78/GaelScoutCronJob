@@ -35,6 +35,9 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
       logger.warn(`Sleeping for ${wait_time} seconds`);
       await new Promise((resolve) => setTimeout(resolve, wait_time * 1000));
       return apiCall(url, headers, params);
+    } else if (response.status !== 200) {
+      logger.error(`Non-200 API call: ${url} - Params: ${JSON.stringify(params)} - Status: ${response.status}`);
+      return null
     }
 
     const json = await response.json();

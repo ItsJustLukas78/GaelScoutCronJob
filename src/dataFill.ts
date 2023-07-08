@@ -667,6 +667,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
     }
 
     DBMetaData.latestTeamsUpdate = new Date(event.end.getTime());
-    await DBMetaData.save();
   }
+
+  await DBMetaData.save();
 };

@@ -37,7 +37,7 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
 
     const json = await response.json();
 
-    logger.info(`API call: ${url} - Params: ${JSON.stringify(params)} - Rate: ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
+    // logger.info(`API call: ${url} - Params: ${JSON.stringify(params)} - Rate: ${response.headers.get("x-ratelimit-remaining")}/${response.headers.get("x-ratelimit-limit")}`);
 
     return json;
   } catch (error) {

@@ -258,6 +258,12 @@ export async function getTeamSkills(team_id: number, seasonId?: number): Promise
   try {
     const response = await apiCall(url, new_headers, new_params);
 
+    if (!response) {
+      return [];
+    } else if (!response.data || response.data.length === 0) {
+      return [];
+    }
+
     skills.push(...response.data);
 
     let next_page_url = response.meta.next_page_url;

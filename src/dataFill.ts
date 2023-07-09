@@ -238,80 +238,83 @@ export class TeamSeasonProfile {
   }
 
   async populate() {
-    this.opr = +(this.oprCum / this.eventCount).toFixed(4);
-    this.dpr = +(this.dprCum / this.eventCount).toFixed(4);
-    this.ccwm = +(this.opr - this.dpr).toFixed(4);
+    try {
+      this.opr = +(this.oprCum / this.eventCount).toFixed(4);
+      this.dpr = +(this.dprCum / this.eventCount).toFixed(4);
+      this.ccwm = +(this.opr - this.dpr).toFixed(4);
 
-    this.openSkill = ordinal({mu: this.mu, sigma: this.sigma});
+      this.openSkill = ordinal({mu: this.mu, sigma: this.sigma});
 
-    if (this.qualMatchCount > 0) {
-      this.qualMatchWinPercentage =
-        +((this.qualMatchWins / this.qualMatchCount)
-          .toFixed(4)) * 100;
-    } else {
-      this.qualMatchWinPercentage = 0;
+      if (this.qualMatchCount > 0) {
+        this.qualMatchWinPercentage =
+          +((this.qualMatchWins / this.qualMatchCount)
+            .toFixed(4)) * 100;
+      } else {
+        this.qualMatchWinPercentage = 0;
+      }
+
+      if (this.elimMatchCount > 0) {
+        this.elimMatchWinPercentage =
+          +((this.elimMatchWins / this.elimMatchCount)
+            .toFixed(4)) * 100;
+      } else {
+        this.elimMatchWinPercentage = 0;
+      }
+
+      if (this.qualMatchCount + this.elimMatchCount > 0) {
+        this.totalMatchWinPercentage =
+          +(((this.qualMatchWins + this.elimMatchWins) / (this.qualMatchCount + this.elimMatchCount))
+            .toFixed(4)) * 100;
+      } else {
+        this.totalMatchWinPercentage = 0;
+      }
+
+      const teamAwards = await getTeamAwards(this.teamId, this.seasonId);
+
+      if (teamAwards) {
+        const qualToRegionals = teamAwards.some((award) =>
+          award.qualifications.some((qualification) =>
+            qualification === "Event Region Championship")
+        );
+        const awardQualToWorlds = teamAwards.some((award) =>
+          award.qualifications.some((qualification) =>
+            qualification === "World Championship")
+        );
+
+        this.qualToRegionals = qualToRegionals;
+        this.awardQualToWorlds = awardQualToWorlds;
+      }
+
+      const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
+
+      if (teamSkills && teamSkills.length > 0) {
+        const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
+          if (skill.type === "programming" && skill.score > topProgSkills) {
+            return skill.score;
+          } else {
+            return topProgSkills;
+          }
+        }, 0);
+
+        const topDriverSkills: number = teamSkills.reduce((topDriverSkills, skill) => {
+          if (skill.type === "driver" && skill.score > topDriverSkills) {
+            return skill.score;
+          } else {
+            return topDriverSkills;
+          }
+        }, 0);
+
+        this.topProgSkills = topProgSkills;
+        this.topDriverSkills = topDriverSkills;
+        this.topTotalSkills = topProgSkills + topDriverSkills;
+      } else {
+        this.topProgSkills = 0;
+        this.topDriverSkills = 0;
+        this.topTotalSkills = 0;
+      }
+    } catch (err) {
+      logger.error(err);
     }
-
-    if (this.elimMatchCount > 0) {
-      this.elimMatchWinPercentage =
-        +((this.elimMatchWins / this.elimMatchCount)
-          .toFixed(4)) * 100;
-    } else {
-      this.elimMatchWinPercentage = 0;
-    }
-
-    if (this.qualMatchCount + this.elimMatchCount > 0) {
-      this.totalMatchWinPercentage =
-        +(((this.qualMatchWins + this.elimMatchWins) / (this.qualMatchCount + this.elimMatchCount))
-          .toFixed(4)) * 100;
-    } else {
-      this.totalMatchWinPercentage = 0;
-    }
-
-    const teamAwards = await getTeamAwards(this.teamId, this.seasonId);
-
-    if (teamAwards) {
-      const qualToRegionals = teamAwards.some((award) =>
-        award.qualifications.some((qualification) =>
-          qualification === "Event Region Championship")
-      );
-      const awardQualToWorlds = teamAwards.some((award) =>
-        award.qualifications.some((qualification) =>
-          qualification === "World Championship")
-      );
-
-      this.qualToRegionals = qualToRegionals;
-      this.awardQualToWorlds = awardQualToWorlds;
-    }
-
-    const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
-
-    if (teamSkills && teamSkills.length > 0) {
-      const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
-        if (skill.type === "programming" && skill.score > topProgSkills) {
-          return skill.score;
-        } else {
-          return topProgSkills;
-        }
-      }, 0);
-
-      const topDriverSkills: number = teamSkills.reduce((topDriverSkills, skill) => {
-        if (skill.type === "driver" && skill.score > topDriverSkills) {
-          return skill.score;
-        } else {
-          return topDriverSkills;
-        }
-      }, 0);
-
-      this.topProgSkills = topProgSkills;
-      this.topDriverSkills = topDriverSkills;
-      this.topTotalSkills = topProgSkills + topDriverSkills;
-    } else {
-      this.topProgSkills = 0;
-      this.topDriverSkills = 0;
-      this.topTotalSkills = 0;
-    }
-
   }
 
   static async populateAllTeams() {
@@ -349,9 +352,13 @@ export class TeamSeasonProfile {
       team.skillsRank = index + 1;
     });
 
+    const promises: Promise<void>[] = [];
+
     this.teamSeasonProfiles.forEach((team) => {
-      team.store();
+      promises.push(team.store());
     });
+
+    await Promise.all(promises);
   }
 
   static async storeTeamSeasonProfiles() {

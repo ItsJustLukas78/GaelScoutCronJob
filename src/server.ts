@@ -35,19 +35,19 @@ async function run() {
   logger.info("STARTING ANALYSIS")
   const startAnalysis = performance.now();
 
-  // await calcCumulativeStats(173);
-  //
-  // logger.info("POPULATING TEAM SEASON PROFILES");
-  // await TeamSeasonProfile.populateAllTeams();
-  //
-  // logger.info("STORING TEAM SEASON PROFILES");
-  // await TeamSeasonProfile.storeTeamSeasonProfiles();
-  //
-  // logger.info("PERFORMING SEASON RANKINGS");
-  // await TeamSeasonProfile.performSeasonRankings(173);
-  //
-  // logger.info("CLEARING TEAM SEASON PROFILES");
-  // await TeamSeasonProfile.clearTeamSeasonProfilesObjects()
+  await calcCumulativeStats(173);
+
+  logger.info("POPULATING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.populateAllTeams();
+
+  logger.info("STORING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.storeTeamSeasonProfiles();
+
+  logger.info("PERFORMING SEASON RANKINGS");
+  await TeamSeasonProfile.performSeasonRankings(173);
+
+  logger.info("CLEARING TEAM SEASON PROFILES");
+  await TeamSeasonProfile.clearTeamSeasonProfilesObjects()
 
   const endAnalysis = performance.now();
 

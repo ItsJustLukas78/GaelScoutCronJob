@@ -13,14 +13,11 @@ import {
 } from "./RobotEventsAPI.js";
 import {
   TeamProfileDocument,
-  TeamProfileDocumentType
 } from "./models/TeamProfile.js";
 import {
   SeasonProfileDocument,
-  SeasonProfileDocumentType,
 } from "./models/SeasonProfile.js";
 import {
-  MetadataDocumentType,
   MetadataDocument,
 } from "./models/Metadata.js";
 import { rating, rate, ordinal } from 'openskill'
@@ -239,8 +236,14 @@ export class TeamSeasonProfile {
 
   async populate() {
     try {
-      this.opr = +(this.oprCum / this.eventCount).toFixed(4);
-      this.dpr = +(this.dprCum / this.eventCount).toFixed(4);
+      if (this.eventCount > 0) {
+        this.opr = +(this.oprCum / this.eventCount).toFixed(4);
+        this.dpr = +(this.dprCum / this.eventCount).toFixed(4);
+      } else {
+        this.opr = 0;
+        this.dpr = 0;
+      }
+
       this.ccwm = +(this.opr - this.dpr).toFixed(4);
 
       this.openSkill = ordinal({mu: this.mu, sigma: this.sigma});

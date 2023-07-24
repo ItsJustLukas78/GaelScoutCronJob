@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model TeamProfile {
+  teamId            Int                 @id
+  teamName          String
+  teamNumber        String              @unique
+  robotName         String?             @default("No name")
+  teamGrade         String?             @default("No grade")
+  teamOrg           String?             @default("No org")
+  teamCity          String?             @default("No city")
+  teamRegion        String?             @default("No region")
+  teamCountry       String?             @default("No country")
+  programCode       String              @default("No program")
+  programId         Int                 @default(0)
+  TeamSeasonProfile TeamSeasonProfile[]
+}
+
+model TeamSeasonProfile {
+  id                      Int         @id @default(autoincrement())
+  teamId                  Int
+  teamName                String
+  teamNumber              String
+  seasonId                Int
+  seasonName              String
+  mu                      Float
+  sigma                   Float
+  openSkill               Float
+  openSkillRank           Int
+  opr                     Float
+  dpr                     Float
+  ccwm                    Float
+  oprCum                  Float
+  dprCum                  Float
+  eventCount              Int
+  topProgSkills           Int
+  topDriverSkills         Int
+  topTotalSkills          Int
+  skillsRank              Int
+  qualMatchCount          Int
+  elimMatchCount          Int
+  qualMatchWins           Int
+  elimMatchWins           Int
+  qualMatchLosses         Int
+  elimMatchLosses         Int
+  qualMatchWinPercentage  Float
+  elimMatchWinPercentage  Float
+  totalMatchWinPercentage Float
+  qualToRegionals         Boolean
+  awardQualToWorlds       Boolean
+  team                    TeamProfile @relation(fields: [teamId], references: [teamId])
+
+  @@unique([teamId, seasonId])
+  @@unique([teamNumber, seasonId])
+}

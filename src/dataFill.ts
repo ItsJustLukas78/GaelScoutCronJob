@@ -11,17 +11,8 @@ import {
   getEvents,
   getTeamSkills, getSeason,
 } from "./RobotEventsAPI.js";
-import {
-  TeamProfileDocument,
-} from "./models/TeamProfile.js";
-import {
-  SeasonProfileDocument,
-} from "./models/SeasonProfile.js";
-import {
-  MetadataDocument,
-} from "./models/Metadata.js";
 import { rating, rate, ordinal } from 'openskill'
-import { logger } from "./server.js";
+import { logger, prismaConnection } from "./server.js";
 
 export class TeamSeasonProfile {
   teamNumber: string;
@@ -86,7 +77,11 @@ export class TeamSeasonProfile {
       return existingObject;
     }
 
-    let existingTeamProfile = await TeamProfileDocument.findOne({ teamId: teamId });
+    let existingTeamProfile = await prismaConnection.teamProfile.findUnique({
+      where: {
+        teamId: teamId,
+      }
+    });
     let existingTeamSeasonProfile;
 
     const teamObject = await getTeamObject(teamId);
@@ -96,59 +91,69 @@ export class TeamSeasonProfile {
     }
 
     if (!existingTeamProfile) {
-      existingTeamProfile = await TeamProfileDocument.create({
-        teamId: teamId,
-        teamName: teamObject.team_name,
-        teamNumber: teamObject.number,
-        robotName: teamObject.robot_name,
-        teamGrade: teamObject.grade,
-        teamOrg: teamObject.organization,
-        teamCity: teamObject.location.city,
-        teamRegion: teamObject.location.region,
-        teamCountry: teamObject.location.country,
+      existingTeamProfile = await prismaConnection.teamProfile.create({
+        data: {
+          teamId: teamId,
+          teamName: teamObject.team_name,
+          teamNumber: teamObject.number,
+          robotName: teamObject.robot_name,
+          teamGrade: teamObject.grade,
+          teamOrg: teamObject.organization,
+          teamCity: teamObject.location.city,
+          teamRegion: teamObject.location.region,
+          teamCountry: teamObject.location.country,
+        }
       });
     }
 
-    existingTeamSeasonProfile = await SeasonProfileDocument.findOneAndUpdate(
-      { teamId: teamId, seasonId: seasonId },
-      { teamDocument: existingTeamProfile._id },
-      { new: true }
-    );
+    existingTeamSeasonProfile = await prismaConnection.teamSeasonProfile.findUnique({
+      where: {
+        teamId_seasonId: {
+          teamId: teamId,
+          seasonId: seasonId,
+        }
+      }
+    });
 
     if (!existingTeamSeasonProfile) {
-      existingTeamSeasonProfile = (await SeasonProfileDocument.create({
-        teamDocument: existingTeamProfile._id,
-        teamId: teamId,
-        teamName: teamObject.team_name,
-        teamNumber: teamObject.number,
-        seasonId: seasonId,
-        seasonName: seasonName,
-        mu: 25,
-        sigma: 8.333333333333334,
-        openSkill: 0,
-        openSkillRank: 0,
-        opr: 0,
-        dpr: 0,
-        ccwm: 0,
-        oprCum: 0,
-        dprCum: 0,
-        eventCount: 0,
-        topProgSkills: 0,
-        topDriverSkills: 0,
-        topTotalSkills: 0,
-        skillsRank: 0,
-        qualMatchCount: 0,
-        elimMatchCount: 0,
-        totalMatchWinPercentage: 0,
-        qualMatchWins: 0,
-        elimMatchWins: 0,
-        qualMatchLosses: 0,
-        elimMatchLosses: 0,
-        qualMatchWinPercentage: 0,
-        elimMatchWinPercentage: 0,
-        qualToRegionals: false,
-        awardQualToWorlds: false,
-      }));
+      existingTeamSeasonProfile = await prismaConnection.teamSeasonProfile.create({
+        data: {
+          teamName: teamObject.team_name,
+          teamNumber: teamObject.number,
+          seasonId: seasonId,
+          seasonName: seasonName,
+          mu: 25,
+          sigma: 8.333333333333334,
+          openSkill: 0,
+          openSkillRank: 0,
+          opr: 0,
+          dpr: 0,
+          ccwm: 0,
+          oprCum: 0,
+          dprCum: 0,
+          eventCount: 0,
+          topProgSkills: 0,
+          topDriverSkills: 0,
+          topTotalSkills: 0,
+          skillsRank: 0,
+          qualMatchCount: 0,
+          elimMatchCount: 0,
+          totalMatchWinPercentage: 0,
+          qualMatchWins: 0,
+          elimMatchWins: 0,
+          qualMatchLosses: 0,
+          elimMatchLosses: 0,
+          qualMatchWinPercentage: 0,
+          elimMatchWinPercentage: 0,
+          qualToRegionals: false,
+          awardQualToWorlds: false,
+          team: {
+            connect: {
+              teamId: teamId,
+            }
+          }
+        }
+      });
     }
 
     const teamSeasonProfileTemplate = {
@@ -192,9 +197,14 @@ export class TeamSeasonProfile {
   }
 
   async store() {
-    await SeasonProfileDocument.findOneAndUpdate(
-      { teamId: this.teamId, seasonId: this.seasonId },
-      {
+    await prismaConnection.teamSeasonProfile.update({
+      where: {
+        teamId_seasonId: {
+          teamId: this.teamId,
+          seasonId: this.seasonId,
+        }
+      },
+      data: {
         teamId: this.teamId,
         teamName: this.teamName,
         teamNumber: this.teamNumber,
@@ -225,11 +235,8 @@ export class TeamSeasonProfile {
         elimMatchWinPercentage: this.elimMatchWinPercentage,
         qualToRegionals: this.qualToRegionals,
         awardQualToWorlds: this.awardQualToWorlds,
-      },
-      {
-        upsert: true
       }
-    );
+    });
 
     return;
   }
@@ -331,7 +338,11 @@ export class TeamSeasonProfile {
   }
 
   static async performSeasonRankings(seasonId: number) {
-    const seasonTeams = await SeasonProfileDocument.find({seasonId: seasonId});
+    const seasonTeams = await prismaConnection.teamSeasonProfile.findMany({
+      where: {
+        seasonId: seasonId,
+      },
+    });
 
     await this.clearTeamSeasonProfilesObjects();
 
@@ -469,23 +480,23 @@ export const calcCumulativeStats = async (seasonId: number) => {
 
   const seasonEvents = await getEvents(seasonId);
 
-  const DBMetaData = await MetadataDocument.findOne({})
+  // const DBMetaData = await MetadataDocument.findOne({})
 
-  if (!seasonEvents || !DBMetaData) {
+  if (!seasonEvents) {
     return;
   }
 
-  const newEvents = seasonEvents.filter(async (event) => {
-    if (new Date(event.end).getTime() > Date.now()) {
-      return false;
-    }
+  // const newEvents = seasonEvents.filter(async (event) => {
+  //   if (new Date(event.end).getTime() > Date.now()) {
+  //     return false;
+  //   }
+  //
+  //   if (DBMetaData.latestTeamsUpdate.getTime() < new Date(event.end).getTime()) {
+  //     return true;
+  //   }
+  // });
 
-    if (DBMetaData.latestTeamsUpdate.getTime() < new Date(event.end).getTime()) {
-      return true;
-    }
-  });
-
-  const events: Event[] = newEvents.map((event) => {
+  const events: Event[] = seasonEvents.map((event) => {
     return new Event(event.sku, event.id, seasonId, seasonObject.name, new Date(event.end), event.divisions.map((division) => division.id));
   });
 
@@ -682,8 +693,8 @@ export const calcCumulativeStats = async (seasonId: number) => {
       }
     }
 
-    DBMetaData.latestTeamsUpdate = new Date(event.end.getTime());
+    // DBMetaData.latestTeamsUpdate = new Date(event.end.getTime());
   }
 
-  await DBMetaData.save();
+  // await DBMetaData.save();
 };

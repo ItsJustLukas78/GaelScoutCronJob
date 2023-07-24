@@ -4,7 +4,7 @@ import {calcCumulativeStats, TeamSeasonProfile} from "./dataFill.js";
 import winston from 'winston';
 import { createRequire } from "module";
 import { PrismaClient } from '@prisma/client'
-import { getTeamObject } from "./RobotEventsAPI";
+import { getTeamObject } from "./RobotEventsAPI.js";
 
 const require = createRequire(import.meta.url);
 

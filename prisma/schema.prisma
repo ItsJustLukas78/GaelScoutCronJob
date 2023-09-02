@@ -7,6 +7,14 @@ datasource db {
   url      = env("POSTGRES_URL")
 }
 
+model SeasonAnalysis {
+  seasonId       Int      @id
+  seasonName     String   @unique
+  numberOfTeams  Int
+  numberOfEvents Int
+  lastEventDate  DateTime
+}
+
 model TeamProfile {
   teamId            Int                 @id
   teamName          String

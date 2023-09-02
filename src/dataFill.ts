@@ -13,6 +13,7 @@ import {
 } from "./RobotEventsAPI.js";
 import { rating, rate, ordinal } from 'openskill'
 import { logger, prismaConnection } from "./server.js";
+import {SeasonAnalysis} from "@prisma/client";
 
 export class TeamSeasonProfile {
   teamNumber: string;
@@ -68,6 +69,10 @@ export class TeamSeasonProfile {
     TeamSeasonProfile.teamSeasonProfiles.push(this);
   }
 
+  static async countTeamSeasonProfiles() {
+    return this.teamSeasonProfiles.length;
+  }
+
   static async getTeamSeasonProfile(teamId: number, seasonId: number, seasonName: string) {
     const existingObject = TeamSeasonProfile.teamSeasonProfiles.find((teamSeasonProfile) => {
       return teamSeasonProfile.teamId === teamId && teamSeasonProfile.seasonId === seasonId;
@@ -102,6 +107,8 @@ export class TeamSeasonProfile {
           teamCity: teamObject.location.city,
           teamRegion: teamObject.location.region,
           teamCountry: teamObject.location.country,
+          programId: teamObject.program.id,
+          programCode: teamObject.program.code,
         }
       });
     }
@@ -471,7 +478,7 @@ class Event {
   }
 }
 
-export const calcCumulativeStats = async (seasonId: number) => {
+export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject: SeasonAnalysis) => {
   const seasonObject = await getSeason(seasonId);
 
   if (!seasonObject) {
@@ -480,34 +487,35 @@ export const calcCumulativeStats = async (seasonId: number) => {
 
   const seasonEvents = await getEvents(seasonId);
 
-  // const DBMetaData = await MetadataDocument.findOne({})
-
   if (!seasonEvents) {
     return;
   }
 
-  // const newEvents = seasonEvents.filter(async (event) => {
-  //   if (new Date(event.end).getTime() > Date.now()) {
-  //     return false;
-  //   }
-  //
-  //   if (DBMetaData.latestTeamsUpdate.getTime() < new Date(event.end).getTime()) {
-  //     return true;
-  //   }
-  // });
+  const newEvents = seasonEvents.filter(async (event) => {
+    // only check events that have ended for at least a day
+    if (new Date(event.end).getTime() + 86400000 > new Date().getTime()) {
+      return false;
+    }
 
-  const events: Event[] = seasonEvents.map((event) => {
+    if (SeasonAnalysisObject.lastEventDate.getTime() < new Date(event.end).getTime()) {
+      return true;
+    }
+  });
+
+  if (newEvents.length === 0) {
+    logger.warn("No new events to analyze");
+    return;
+  }
+
+  const events: Event[] = newEvents.map((event) => {
     return new Event(event.sku, event.id, seasonId, seasonObject.name, new Date(event.end), event.divisions.map((division) => division.id));
   });
+
+  logger.verbose(`Analyzing ${events.length} events...`);
 
   events.sort((a, b) => {
     return a.end.getTime() - b.end.getTime();
   })
-
-  // const events: Event[] = [
-  //   new Event("RE-VRC-22-9506", 49506, 173, "VRC 2022-2023: Spin Up", new Date("2022-10-15T00:00:00-04:00"), [1]),
-  //   // new Event("RE-VRC-22-8473", 48473, 173, "VRC 2022-2023: Spin Up", new Date("2023-03-25T00:00:00-04:00"), [1, 2, 3, 4, 100, 101, 102]),
-  // ];
 
   for (let i = 0; i < events.length; i++) {
     const event = events[i];
@@ -517,7 +525,7 @@ export const calcCumulativeStats = async (seasonId: number) => {
       continue;
     }
 
-    logger.info(`Processing ${event.eventCode}, ${events.length - i + 1} remaining...`);
+    logger.verbose(`Processing ${event.eventCode}, ${events.length - i + 1} remaining...`);
     for (const division of eventDivisions) {
       const matches: Match[] = await event.getMatches(division)
 
@@ -692,9 +700,20 @@ export const calcCumulativeStats = async (seasonId: number) => {
         logger.warn(`Couldn't analyze ${event.eventCode} - division ${division}`)
       }
     }
-
-    // DBMetaData.latestTeamsUpdate = new Date(event.end.getTime());
   }
 
-  // await DBMetaData.save();
+  const newNumberOfEvents = SeasonAnalysisObject.numberOfEvents + events.length;
+  const newNumberOfTeams = SeasonAnalysisObject.numberOfTeams + await TeamSeasonProfile.countTeamSeasonProfiles();
+  const newLastEventDate = events[events.length - 1].end;
+
+  await prismaConnection.seasonAnalysis.update({
+    where: {
+      seasonId: seasonId,
+    },
+    data: {
+      numberOfEvents: newNumberOfEvents,
+      numberOfTeams: newNumberOfTeams,
+      lastEventDate: newLastEventDate,
+    }
+  });
 };

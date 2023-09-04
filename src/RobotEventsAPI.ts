@@ -17,11 +17,20 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
     let parametrized_url: string = url;
 
     if (params) {
+      // @ts-ignore
       Object.keys(params).forEach(key => params[key] == null && delete params[key]);
+
+      params = {...params, per_page: 250};
+
+      const searchParams = new URLSearchParams(params as any);
+      parametrized_url += (url.includes('?') ? '&' : '?') + searchParams.toString();
+    } else {
+      params = {per_page: 250};
 
       const searchParams = new URLSearchParams(params as any);
       parametrized_url += (url.includes('?') ? '&' : '?') + searchParams.toString();
     }
+
 
     const response: Response = await throttler.schedule(() =>
       fetch(parametrized_url, {

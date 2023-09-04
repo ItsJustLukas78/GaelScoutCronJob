@@ -65,9 +65,7 @@ async function run() {
 
   logger.info(`Done Analyzing Data In ${endAnalysis - startAnalysis} ms`);
 
-  // prepare to exit cron job
   await prismaConnection.$disconnect();
-  process.exit(0);
 }
 
 run();

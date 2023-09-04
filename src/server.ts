@@ -64,9 +64,10 @@ async function run() {
   const endAnalysis = performance.now();
 
   logger.info(`Done Analyzing Data In ${endAnalysis - startAnalysis} ms`);
+
+  // prepare to exit cron job
+  await prismaConnection.$disconnect();
+  process.exit(0);
 }
 
-// Call run every 24 hours on interval
 run();
-
-setInterval(run, 1000 * 60 * 60 * 24);

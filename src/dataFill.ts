@@ -491,16 +491,17 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
     return;
   }
 
-  const newEvents = seasonEvents.filter(async (event) => {
-    // only check events that have ended for at least a day
+  const newEvents: any[] = [];
+
+  for (const event of seasonEvents) {
     if (new Date(event.end).getTime() + 86400000 > new Date().getTime()) {
-      return false;
+      continue; // Skip events that haven't ended for at least a day
     }
 
     if (SeasonAnalysisObject.lastEventDate.getTime() < new Date(event.end).getTime()) {
-      return true;
+      newEvents.push(event); // Add events that meet the criteria
     }
-  });
+  }
 
   if (newEvents.length === 0) {
     logger.warn("No new events to analyze");

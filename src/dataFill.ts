@@ -82,23 +82,42 @@ export class TeamSeasonProfile {
       return existingObject;
     }
 
-    let existingTeamProfile = await prismaConnection.teamProfile.findUnique({
-      where: {
-        teamId: teamId,
-      }
-    });
-    let existingTeamSeasonProfile;
-
     const teamObject = await getTeamObject(teamId);
 
     if (!teamObject) {
       return null;
     }
 
+    let existingTeamProfile = await prismaConnection.teamProfile.findUnique({
+      where: {
+        teamId: teamId,
+      }
+    });
+
+    let existingTeamSeasonProfile;
+
     if (!existingTeamProfile) {
       existingTeamProfile = await prismaConnection.teamProfile.create({
         data: {
           teamId: teamId,
+          teamName: teamObject.team_name,
+          teamNumber: teamObject.number,
+          robotName: teamObject.robot_name,
+          teamGrade: teamObject.grade,
+          teamOrg: teamObject.organization,
+          teamCity: teamObject.location.city,
+          teamRegion: teamObject.location.region,
+          teamCountry: teamObject.location.country,
+          programId: teamObject.program.id,
+          programCode: teamObject.program.code,
+        }
+      });
+    } else {
+      existingTeamProfile = await prismaConnection.teamProfile.update({
+        where: {
+          teamId: teamId,
+        },
+        data: {
           teamName: teamObject.team_name,
           teamNumber: teamObject.number,
           robotName: teamObject.robot_name,

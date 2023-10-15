@@ -399,6 +399,24 @@ export class TeamSeasonProfile {
     });
 
     await Promise.all(promises);
+
+    const numberOfWorldsQualifiers: number = this.teamSeasonProfiles.filter((team) => {
+      return team.awardQualToWorlds;
+    }).length;
+
+    const numberOfRegionalQualifiers: number = this.teamSeasonProfiles.filter((team) => {
+      return team.qualToRegionals;
+    }).length;
+
+    await prismaConnection.seasonAnalysis.update({
+      where: {
+        seasonId: seasonId,
+      },
+      data: {
+        numberOfWorldsQualifiers: numberOfWorldsQualifiers,
+        numberOfRegionalQualifiers: numberOfRegionalQualifiers,
+      }
+    });
   }
 
   static async storeTeamSeasonProfiles() {

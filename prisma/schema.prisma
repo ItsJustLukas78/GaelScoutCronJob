@@ -8,11 +8,13 @@ datasource db {
 }
 
 model SeasonAnalysis {
-  seasonId       Int      @id
-  seasonName     String   @unique
-  numberOfTeams  Int
-  numberOfEvents Int
-  lastEventDate  DateTime
+  seasonId                   Int      @id
+  seasonName                 String   @unique
+  numberOfTeams              Int
+  numberOfEvents             Int
+  numberOfWorldsQualifiers   Int?
+  numberOfRegionalQualifiers Int?
+  lastEventDate              DateTime
 }
 
 model TeamProfile {
@@ -27,7 +29,10 @@ model TeamProfile {
   teamCountry       String?             @default("No country")
   programCode       String              @default("No program")
   programId         Int                 @default(0)
+  TeamNote          TeamNote[]
   TeamSeasonProfile TeamSeasonProfile[]
+
+  @@unique([teamId, teamNumber])
 }
 
 model TeamSeasonProfile {
@@ -66,4 +71,24 @@ model TeamSeasonProfile {
 
   @@unique([teamId, seasonId])
   @@unique([teamNumber, seasonId])
+}
+
+model TeamNote {
+  id          Int         @id @default(autoincrement())
+  teamId      Int
+  note        Json
+  userId      String
+  seasonId    Int
+  teamNumber  String
+  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
+
+  @@unique([userId, seasonId, teamNumber, teamId])
+}
+
+model User {
+  id        String  @id
+  email     String? @unique
+  firstName String?
+  lastName  String?
+  username  String? @unique
 }

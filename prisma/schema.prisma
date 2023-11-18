@@ -12,9 +12,9 @@ model SeasonAnalysis {
   seasonName                 String   @unique
   numberOfTeams              Int
   numberOfEvents             Int
-  numberOfWorldsQualifiers   Int?
-  numberOfRegionalQualifiers Int?
   lastEventDate              DateTime
+  numberOfRegionalQualifiers Int?
+  numberOfWorldsQualifiers   Int?
 }
 
 model TeamProfile {
@@ -29,6 +29,7 @@ model TeamProfile {
   teamCountry       String?             @default("No country")
   programCode       String              @default("No program")
   programId         Int                 @default(0)
+  FavoriteTeam      FavoriteTeam[]
   TeamNote          TeamNote[]
   TeamSeasonProfile TeamSeasonProfile[]
 
@@ -74,21 +75,56 @@ model TeamSeasonProfile {
 }
 
 model TeamNote {
-  id          Int         @id @default(autoincrement())
-  teamId      Int
-  note        Json
-  userId      String
-  seasonId    Int
-  teamNumber  String
-  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
+  id           Int         @id @default(autoincrement())
+  teamId       Int
+  note         Json
+  userId       String?
+  seasonId     Int
+  teamNumber   String
+  notesGroupId Int?
+  NotesGroup   NotesGroup? @relation(fields: [notesGroupId], references: [id])
+  TeamProfile  TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
 
   @@unique([userId, seasonId, teamNumber, teamId])
+  @@unique([notesGroupId, seasonId, teamNumber, teamId])
 }
 
 model User {
-  id        String  @id
-  email     String? @unique
-  firstName String?
-  lastName  String?
-  username  String? @unique
+  id            String          @id
+  email         String?         @unique
+  firstName     String?
+  lastName      String?
+  username      String?         @unique
+  notesGroupId  Int?
+  FavoriteEvent FavoriteEvent[]
+  FavoriteTeam  FavoriteTeam[]
+  NotesGroup    NotesGroup[]    @relation("UserNotesGroups")
+}
+
+model FavoriteEvent {
+  id      Int    @id @default(autoincrement())
+  userId  String
+  eventId Int
+  User    User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+model FavoriteTeam {
+  id          Int         @id @default(autoincrement())
+  userId      String
+  teamId      Int
+  teamNumber  String
+  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
+  User        User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, teamNumber, teamId])
+}
+
+model NotesGroup {
+  id       Int        @id @default(autoincrement())
+  joinCode String     @unique
+  name     String
+  TeamNote TeamNote[]
+  User     User[]     @relation("UserNotesGroups")
 }

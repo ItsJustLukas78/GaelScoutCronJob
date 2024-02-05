@@ -116,9 +116,10 @@ export class TeamSeasonProfile {
             });
           }
         } else {
+          logger.warn(`Duplicate team ${existingTeamProfileWithSameNumber} found in database`);
           await prismaConnection.teamProfile.delete({
             where: {
-              teamId: existingTeamProfileWithSameNumber.teamId,
+              teamNumber: teamObject.number,
             }
           });
         }

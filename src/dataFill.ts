@@ -94,10 +94,38 @@ export class TeamSeasonProfile {
       }
     });
 
-    let existingTeamSeasonProfile;
-
     if (!existingTeamProfile) {
-      existingTeamProfile = await prismaConnection.teamProfile.create({
+      // deal with any number changes or transfers
+      const existingTeamProfileWithSameNumber = await prismaConnection.teamProfile.findUnique({
+        where: {
+          teamNumber: teamObject.number,
+        }
+      });
+
+      if (existingTeamProfileWithSameNumber) {
+        const teamObjectWithSameNumber = await getTeamObject(existingTeamProfileWithSameNumber.teamId);
+        if (teamObjectWithSameNumber) {
+          if (teamObjectWithSameNumber.number !== teamObject.number) {
+            await prismaConnection.teamProfile.update({
+              where: {
+                teamId: existingTeamProfileWithSameNumber.teamId,
+              },
+              data: {
+                teamNumber: teamObjectWithSameNumber.number,
+              }
+            });
+          }
+        } else {
+          await prismaConnection.teamProfile.delete({
+            where: {
+              teamId: existingTeamProfileWithSameNumber.teamId,
+            }
+          });
+        }
+      }
+
+      // create new team profile
+      await prismaConnection.teamProfile.create({
         data: {
           teamId: teamId,
           teamName: teamObject.team_name,
@@ -113,7 +141,8 @@ export class TeamSeasonProfile {
         }
       });
     } else {
-      existingTeamProfile = await prismaConnection.teamProfile.update({
+      // update existing team profile
+      await prismaConnection.teamProfile.update({
         where: {
           teamId: teamId,
         },
@@ -131,6 +160,8 @@ export class TeamSeasonProfile {
         }
       });
     }
+
+    let existingTeamSeasonProfile
 
     existingTeamSeasonProfile = await prismaConnection.teamSeasonProfile.findUnique({
       where: {

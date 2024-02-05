@@ -531,7 +531,7 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
   const newEvents: any[] = [];
 
   for (const event of seasonEvents) {
-    if (new Date(event.end).getTime() + 2 * 24 * 60 * 60 * 1000 < new Date().getTime()) {
+    if ((new Date(event.end).getTime() + (2 * 24 * 60 * 60 * 1000)) > new Date().getTime()) {
       continue; // Skip events that haven't ended for at least 2 days
     }
 

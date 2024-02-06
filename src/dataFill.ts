@@ -106,6 +106,7 @@ export class TeamSeasonProfile {
         if (teamObjectWithSameNumber) {
           if (teamObjectWithSameNumber.number !== teamObject.number) {
             // the team changed their number, update the profile with the new number
+            logger.warn(`Updating team ${teamObjectWithSameNumber.number}, ${existingTeamProfileWithSameNumber.teamId} with new number: ${teamObject.number}`);
             await prismaConnection.teamProfile.update({
               where: {
                 teamId: existingTeamProfileWithSameNumber.teamId,
@@ -137,6 +138,7 @@ export class TeamSeasonProfile {
           }
         } else {
           // the teamObjectWithSameNumber is null indicating the team was deleted, delete the existingTeamProfileWithSameNumber
+          logger.warn(`Deleting team ${existingTeamProfileWithSameNumber.teamNumber}, ${existingTeamProfileWithSameNumber.teamId}`);
           await prismaConnection.teamProfile.delete({
             where: {
               teamId: existingTeamProfileWithSameNumber.teamId,
@@ -162,6 +164,7 @@ export class TeamSeasonProfile {
         }
       } else {
         // create new team profile
+        logger.warn(`Creating new team profile for ${teamObject.number}, ${teamId}`);
         await prismaConnection.teamProfile.create({
           data: {
             teamId: teamId,
@@ -211,9 +214,9 @@ export class TeamSeasonProfile {
     });
 
     if (!existingTeamSeasonProfile) {
+      logger.warn(`Creating new team season profile for ${teamObject.number}, ${teamId}, ${seasonName}`);
       existingTeamSeasonProfile = await prismaConnection.teamSeasonProfile.create({
         data: {
-          teamNumber: teamObject.number,
           seasonId: seasonId,
           seasonName: seasonName,
           mu: 25,
@@ -244,6 +247,7 @@ export class TeamSeasonProfile {
           team: {
             connect: {
               teamId: teamId,
+              teamNumber: teamObject.number,
             }
           }
         }

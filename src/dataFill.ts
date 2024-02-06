@@ -17,7 +17,6 @@ import {SeasonAnalysis} from "@prisma/client";
 
 export class TeamSeasonProfile {
   teamNumber: string;
-  teamName: string;
   teamId: number;
 
   seasonId: number;
@@ -106,6 +105,7 @@ export class TeamSeasonProfile {
         const teamObjectWithSameNumber = await getTeamObject(existingTeamProfileWithSameNumber.teamId);
         if (teamObjectWithSameNumber) {
           if (teamObjectWithSameNumber.number !== teamObject.number) {
+            // the team changed their number, update the profile with the new number
             await prismaConnection.teamProfile.update({
               where: {
                 teamId: existingTeamProfileWithSameNumber.teamId,
@@ -114,33 +114,70 @@ export class TeamSeasonProfile {
                 teamNumber: teamObjectWithSameNumber.number,
               }
             });
+          } else {
+            // the numbers are still the same, update the profile with the new teamId and other info
+            logger.warn(`Updating team ${teamObject.number}, ${existingTeamProfileWithSameNumber.teamId} with new teamId: ${teamId}`);
+            await prismaConnection.teamProfile.update({
+              where: {
+                teamId: existingTeamProfileWithSameNumber.teamId,
+              },
+              data: {
+                teamId: teamId,
+                teamName: teamObject.team_name,
+                robotName: teamObject.robot_name,
+                teamGrade: teamObject.grade,
+                teamOrg: teamObject.organization,
+                teamCity: teamObject.location.city,
+                teamRegion: teamObject.location.region,
+                teamCountry: teamObject.location.country,
+                programId: teamObject.program.id,
+                programCode: teamObject.program.code,
+              }
+            });
           }
         } else {
-          logger.warn(`Duplicate team ${existingTeamProfileWithSameNumber} found in database`);
+          // the teamObjectWithSameNumber is null indicating the team was deleted, delete the existingTeamProfileWithSameNumber
           await prismaConnection.teamProfile.delete({
             where: {
+              teamId: existingTeamProfileWithSameNumber.teamId,
+            }
+          });
+
+          // create new team profile
+          await prismaConnection.teamProfile.create({
+            data: {
+              teamId: teamId,
+              teamName: teamObject.team_name,
               teamNumber: teamObject.number,
+              robotName: teamObject.robot_name,
+              teamGrade: teamObject.grade,
+              teamOrg: teamObject.organization,
+              teamCity: teamObject.location.city,
+              teamRegion: teamObject.location.region,
+              teamCountry: teamObject.location.country,
+              programId: teamObject.program.id,
+              programCode: teamObject.program.code,
             }
           });
         }
+      } else {
+        // create new team profile
+        await prismaConnection.teamProfile.create({
+          data: {
+            teamId: teamId,
+            teamName: teamObject.team_name,
+            teamNumber: teamObject.number,
+            robotName: teamObject.robot_name,
+            teamGrade: teamObject.grade,
+            teamOrg: teamObject.organization,
+            teamCity: teamObject.location.city,
+            teamRegion: teamObject.location.region,
+            teamCountry: teamObject.location.country,
+            programId: teamObject.program.id,
+            programCode: teamObject.program.code,
+          }
+        });
       }
-
-      // create new team profile
-      await prismaConnection.teamProfile.create({
-        data: {
-          teamId: teamId,
-          teamName: teamObject.team_name,
-          teamNumber: teamObject.number,
-          robotName: teamObject.robot_name,
-          teamGrade: teamObject.grade,
-          teamOrg: teamObject.organization,
-          teamCity: teamObject.location.city,
-          teamRegion: teamObject.location.region,
-          teamCountry: teamObject.location.country,
-          programId: teamObject.program.id,
-          programCode: teamObject.program.code,
-        }
-      });
     } else {
       // update existing team profile
       await prismaConnection.teamProfile.update({
@@ -176,7 +213,6 @@ export class TeamSeasonProfile {
     if (!existingTeamSeasonProfile) {
       existingTeamSeasonProfile = await prismaConnection.teamSeasonProfile.create({
         data: {
-          teamName: teamObject.team_name,
           teamNumber: teamObject.number,
           seasonId: seasonId,
           seasonName: seasonName,
@@ -215,7 +251,6 @@ export class TeamSeasonProfile {
     }
 
     const teamSeasonProfileTemplate = {
-      teamName: existingTeamSeasonProfile.teamName,
       teamId: existingTeamSeasonProfile.teamId,
       teamNumber: existingTeamSeasonProfile.teamNumber,
       seasonId: existingTeamSeasonProfile.seasonId,
@@ -264,7 +299,6 @@ export class TeamSeasonProfile {
       },
       data: {
         teamId: this.teamId,
-        teamName: this.teamName,
         teamNumber: this.teamNumber,
         seasonId: this.seasonId,
         seasonName: this.seasonName,

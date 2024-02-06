@@ -39,7 +39,6 @@ model TeamProfile {
 model TeamSeasonProfile {
   id                      Int         @id @default(autoincrement())
   teamId                  Int
-  teamName                String
   teamNumber              String
   seasonId                Int
   seasonName              String
@@ -68,7 +67,7 @@ model TeamSeasonProfile {
   totalMatchWinPercentage Float
   qualToRegionals         Boolean
   awardQualToWorlds       Boolean
-  team                    TeamProfile @relation(fields: [teamId], references: [teamId])
+  team                    TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
 
   @@unique([teamId, seasonId])
   @@unique([teamNumber, seasonId])
@@ -83,7 +82,7 @@ model TeamNote {
   teamNumber   String
   notesGroupId Int?
   NotesGroup   NotesGroup? @relation(fields: [notesGroupId], references: [id])
-  TeamProfile  TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
+  TeamProfile  TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
 
   @@unique([userId, seasonId, teamNumber, teamId])
   @@unique([notesGroupId, seasonId, teamNumber, teamId])
@@ -116,7 +115,7 @@ model FavoriteTeam {
   userId      String
   teamId      Int
   teamNumber  String
-  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber])
+  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
   User        User        @relation(fields: [userId], references: [id])
 
   @@unique([userId, teamNumber, teamId])

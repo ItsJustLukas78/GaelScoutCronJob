@@ -167,6 +167,12 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
   try {
     const response = await apiCall(url, new_headers, new_params);
 
+    if (!response) {
+      return [];
+    } else if (!response.data || response.data.length === 0) {
+      return [];
+    }
+
     team_awards.push(...response.data);
 
     let next_page_url = response.meta.next_page_url;
@@ -179,9 +185,7 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
       team_awards.push(...nextPageResponse.data);
     }
 
-    return team_awards.filter((event, index, self) => {
-      return index === self.findIndex((t) => t.id === event.id);
-    });
+    return team_awards
   } catch (error) {
     logger.error(error);
     return [];

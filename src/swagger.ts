@@ -4,14 +4,14 @@ import swaggerAutogen from 'swagger-autogen';
 const doc = {
   openapi: "3.1.0",
   info: {
-    title: "GaelScout API from GaelSuite",
+    title: "GaelScout API",
     version: "0.1.0",
     description:
       "An API for the the GaleScout app, and for teams in need of scouting data for VRC",
     contact: {
       name: "GaelScout",
-      url: "https://gaelscout.com",
-      email: "somwong.lukas@gaelsuite.com",
+      url: "https://www.gaelscout.com",
+      email: "support@gaelscout.com",
     },
   },
   servers: [

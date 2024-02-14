@@ -888,45 +888,80 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
   });
 };
 
-async function updateSkillsStandings() {
-  const seasonId = 181;
-  const skillsStandings = await getSkillsStandings({seasonId});
+// async function updateSkillsStandings() {
+//   const seasonId = 181;
+//   const skillsStandings = await getSkillsStandings({seasonId});
+//
+//   if (skillsStandings) {
+//     const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+//       where: {
+//         seasonId: seasonId,
+//       }
+//     });
+//
+//     for (const teamSeasonProfile of teamSeasonProfiles) {
+//       const team = skillsStandings.find((team) => {
+//         return team.team.id === teamSeasonProfile.teamId;
+//       });
+//
+//       if (team) {
+//         await prismaConnection.teamSeasonProfile.update({
+//           where: {
+//             teamId_seasonId: {
+//               teamId: teamSeasonProfile.teamId,
+//               seasonId: teamSeasonProfile.seasonId,
+//             }
+//           },
+//           data: {
+//             totalSkills: team.scores.score,
+//             progSkills: team.scores.programming,
+//             driverSkills: team.scores.driver,
+//             topProgSkills: team.scores.maxProgramming,
+//             topDriverSkills: team.scores.maxDriver,
+//           }
+//         });
+//
+//         logger.info(`Updated ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills scores`);
+//       } else {
+//         logger.warn(`No skills standings found for ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId}`);
+//       }
+//     }
+//   }
+// }
+//
+// updateSkillsStandings();
 
-  if (skillsStandings) {
-    const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+// script to rank the skills score of all the season profiles with existing skills scores
+async function rankSkills() {
+  const seasonId = 181;
+
+  const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+    where: {
+      seasonId: seasonId,
+    }
+  });
+
+  // sort by total skills
+  const sortedTeamSeasonProfiles = teamSeasonProfiles.sort((a, b) => {
+    return b.totalSkills - a.totalSkills;
+  });
+
+  // rank the skills scores
+  for (const [index, teamSeasonProfile] of sortedTeamSeasonProfiles.entries()) {
+    await prismaConnection.teamSeasonProfile.update({
       where: {
-        seasonId: seasonId,
+        teamId_seasonId: {
+          teamId: teamSeasonProfile.teamId,
+          seasonId: teamSeasonProfile.seasonId,
+        }
+      },
+      data: {
+        skillsRank: index + 1,
       }
     });
 
-    for (const teamSeasonProfile of teamSeasonProfiles) {
-      const team = skillsStandings.find((team) => {
-        return team.team.id === teamSeasonProfile.teamId;
-      });
-
-      if (team) {
-        await prismaConnection.teamSeasonProfile.update({
-          where: {
-            teamId_seasonId: {
-              teamId: teamSeasonProfile.teamId,
-              seasonId: teamSeasonProfile.seasonId,
-            }
-          },
-          data: {
-            totalSkills: team.scores.score,
-            progSkills: team.scores.programming,
-            driverSkills: team.scores.driver,
-            topProgSkills: team.scores.maxProgramming,
-            topDriverSkills: team.scores.maxDriver,
-          }
-        });
-
-        logger.info(`Updated ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills scores`);
-      } else {
-        logger.warn(`No skills standings found for ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId}`);
-      }
-    }
+    logger.info(`Ranked ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills rank ${index + 1} and skills score ${teamSeasonProfile.totalSkills}`);
   }
 }
 
-updateSkillsStandings();
+rankSkills();

@@ -53,9 +53,11 @@ model TeamSeasonProfile {
   oprCum                  Float
   dprCum                  Float
   eventCount              Int
+  totalSkills             Int         @default(0)
+  progSkills              Int         @default(0)
+  driverSkills            Int         @default(0)
   topProgSkills           Int
   topDriverSkills         Int
-  topTotalSkills          Int
   skillsRank              Int
   qualMatchCount          Int
   elimMatchCount          Int

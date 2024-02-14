@@ -68,4 +68,4 @@ async function run() {
   await prismaConnection.$disconnect();
 }
 
-run();
+// run();

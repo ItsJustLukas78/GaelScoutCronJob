@@ -81,9 +81,13 @@ export class TeamSeasonProfile {
   dprCum: number = 0;
   eventCount: number = 0;
 
+  totalSkills: number = 0;
+  progSkills: number = 0;
+  driverSkills: number = 0;
+
   topProgSkills: number = 0;
   topDriverSkills: number = 0;
-  topTotalSkills: number = 0;
+
   skillsRank: number = 0;
 
   qualMatchCount: number = 0;
@@ -289,9 +293,11 @@ export class TeamSeasonProfile {
           oprCum: 0,
           dprCum: 0,
           eventCount: 0,
+          totalSkills: 0,
+          progSkills: 0,
+          driverSkills: 0,
           topProgSkills: 0,
           topDriverSkills: 0,
-          topTotalSkills: 0,
           skillsRank: 0,
           qualMatchCount: 0,
           elimMatchCount: 0,
@@ -329,9 +335,11 @@ export class TeamSeasonProfile {
       oprCum: existingTeamSeasonProfile.oprCum,
       dprCum: existingTeamSeasonProfile.dprCum,
       eventCount: existingTeamSeasonProfile.eventCount,
+      totalSkills: existingTeamSeasonProfile.totalSkills,
+      progSkills: existingTeamSeasonProfile.progSkills,
+      driverSkills: existingTeamSeasonProfile.driverSkills,
       topProgSkills: existingTeamSeasonProfile.topProgSkills,
       topDriverSkills: existingTeamSeasonProfile.topDriverSkills,
-      topTotalSkills: existingTeamSeasonProfile.topTotalSkills,
       skillsRank: existingTeamSeasonProfile.skillsRank,
       qualMatchCount: existingTeamSeasonProfile.qualMatchCount,
       elimMatchCount: existingTeamSeasonProfile.elimMatchCount,
@@ -372,9 +380,11 @@ export class TeamSeasonProfile {
         oprCum: this.oprCum,
         dprCum: this.dprCum,
         eventCount: this.eventCount,
+        totalSkills: this.totalSkills,
+        progSkills: this.progSkills,
+        driverSkills: this.driverSkills,
         topProgSkills: this.topProgSkills,
         topDriverSkills: this.topDriverSkills,
-        topTotalSkills: this.topTotalSkills,
         skillsRank: this.skillsRank,
         qualMatchCount: this.qualMatchCount,
         elimMatchCount: this.elimMatchCount,
@@ -455,38 +465,20 @@ export class TeamSeasonProfile {
         });
 
         if (teamSkills) {
+          this.totalSkills = teamSkills.scores.score;
+          this.progSkills = teamSkills.scores.programming;
+          this.driverSkills = teamSkills.scores.driver;
           this.topProgSkills = teamSkills.scores.maxProgramming;
           this.topDriverSkills = teamSkills.scores.maxDriver;
-          this.topTotalSkills = teamSkills.scores.score;
         }
       } else {
-        const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
+        logger.warn(`No skills standings found for ${this.seasonName}`);
 
-        if (teamSkills && teamSkills.length > 0) {
-          const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
-            if (skill.type === "programming" && skill.score > topProgSkills) {
-              return skill.score;
-            } else {
-              return topProgSkills;
-            }
-          }, 0);
-
-          const topDriverSkills: number = teamSkills.reduce((topDriverSkills, skill) => {
-            if (skill.type === "driver" && skill.score > topDriverSkills) {
-              return skill.score;
-            } else {
-              return topDriverSkills;
-            }
-          }, 0);
-
-          this.topProgSkills = topProgSkills;
-          this.topDriverSkills = topDriverSkills;
-          this.topTotalSkills = topProgSkills + topDriverSkills;
-        } else {
-          this.topProgSkills = 0;
-          this.topDriverSkills = 0;
-          this.topTotalSkills = 0;
-        }
+        this.totalSkills = 0;
+        this.progSkills = 0;
+        this.driverSkills = 0;
+        this.topProgSkills = 0;
+        this.topDriverSkills = 0;
       }
     } catch (err) {
       logger.error(err);
@@ -524,11 +516,11 @@ export class TeamSeasonProfile {
       team.openSkillRank = index + 1;
     });
 
-    const topSkillsSorted = [...this.teamSeasonProfiles].sort((teamA, teamB) => {
-      return teamB.topTotalSkills - teamA.topTotalSkills;
+    const skillsSorted = [...this.teamSeasonProfiles].sort((teamA, teamB) => {
+      return teamB.totalSkills - teamA.totalSkills;
     });
 
-    topSkillsSorted.forEach((team, index) => {
+    skillsSorted.forEach((team, index) => {
       team.skillsRank = index + 1;
     });
 
@@ -895,3 +887,46 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
     }
   });
 };
+
+async function updateSkillsStandings() {
+  const seasonId = 181;
+  const skillsStandings = await getSkillsStandings({seasonId});
+
+  if (skillsStandings) {
+    const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+      where: {
+        seasonId: seasonId,
+      }
+    });
+
+    for (const teamSeasonProfile of teamSeasonProfiles) {
+      const team = skillsStandings.find((team) => {
+        return team.team.id === teamSeasonProfile.teamId;
+      });
+
+      if (team) {
+        await prismaConnection.teamSeasonProfile.update({
+          where: {
+            teamId_seasonId: {
+              teamId: teamSeasonProfile.teamId,
+              seasonId: teamSeasonProfile.seasonId,
+            }
+          },
+          data: {
+            totalSkills: team.scores.score,
+            progSkills: team.scores.programming,
+            driverSkills: team.scores.driver,
+            topProgSkills: team.scores.maxProgramming,
+            topDriverSkills: team.scores.maxDriver,
+          }
+        });
+
+        logger.info(`Updated ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills scores`);
+      } else {
+        logger.warn(`No skills standings found for ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId}`);
+      }
+    }
+  }
+}
+
+updateSkillsStandings();

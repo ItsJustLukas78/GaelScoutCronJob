@@ -192,6 +192,28 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
   }
 }
 
+export async function getSkillsStandings({seasonId} : {seasonId: number}): Promise<any[]> {
+  const url = `https://www.robotevents.com/api/seasons/${seasonId}/skills?grade_level=High%20School`;
+  const new_headers = {
+    "accept": "application/json",
+    "Authorization": "Bearer " + API_KEY,
+  };
+
+  try {
+    const skillsStandings = await apiCall(url, new_headers);
+
+    if (!skillsStandings) {
+      console.error("Warning: No skills standings could be found");
+      return [];
+    }
+
+    return skillsStandings;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}
+
 export async function getTeamEvents(team_id: number, season_id?: number): Promise<any[]> {
   const url = `https://www.robotevents.com/api/v2/teams/${team_id}/events`;
   const new_headers = {

@@ -21,13 +21,14 @@ model TeamProfile {
   teamId            Int                 @id
   teamName          String
   teamNumber        String              @unique
-  robotName         String?             @default("No name")
-  teamGrade         String?             @default("No grade")
-  teamOrg           String?             @default("No org")
-  teamCity          String?             @default("No city")
-  teamRegion        String?             @default("No region")
-  teamCountry       String?             @default("No country")
-  programCode       String              @default("No program")
+  robotName         String?
+  teamGrade         String?
+  teamOrg           String?
+  teamCity          String?
+  teamRegion        String?
+  teamEventRegion   String?
+  teamCountry       String?
+  programCode       String              @default("")
   programId         Int                 @default(0)
   FavoriteTeam      FavoriteTeam[]
   TeamNote          TeamNote[]
@@ -67,7 +68,7 @@ model TeamSeasonProfile {
   totalMatchWinPercentage Float
   qualToRegionals         Boolean
   awardQualToWorlds       Boolean
-  team                    TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
+  team                    TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onDelete: Cascade)
 
   @@unique([teamId, seasonId])
   @@unique([teamNumber, seasonId])
@@ -82,7 +83,7 @@ model TeamNote {
   teamNumber   String
   notesGroupId Int?
   NotesGroup   NotesGroup? @relation(fields: [notesGroupId], references: [id])
-  TeamProfile  TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
+  TeamProfile  TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onDelete: Cascade)
 
   @@unique([userId, seasonId, teamNumber, teamId])
   @@unique([notesGroupId, seasonId, teamNumber, teamId])
@@ -115,7 +116,7 @@ model FavoriteTeam {
   userId      String
   teamId      Int
   teamNumber  String
-  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onUpdate: Cascade, onDelete: Cascade)
+  TeamProfile TeamProfile @relation(fields: [teamId, teamNumber], references: [teamId, teamNumber], onDelete: Cascade)
   User        User        @relation(fields: [userId], references: [id])
 
   @@unique([userId, teamNumber, teamId])

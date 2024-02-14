@@ -9,11 +9,57 @@ import {
   getTeamObject,
   getTeamAwards,
   getEvents,
-  getTeamSkills, getSeason,
+  getTeamSkills, getSeason, getSkillsStandings
 } from "./RobotEventsAPI.js";
 import { rating, rate, ordinal } from 'openskill'
 import { logger, prismaConnection } from "./server.js";
 import {SeasonAnalysis} from "@prisma/client";
+
+
+interface SkillsStandingsTeamData {
+    id: number;
+    program: string;
+    teamRegId: number;
+    team: string;
+    teamName: string;
+    organization: string;
+    city: string;
+    region: string;
+    country: string;
+    gradeLevel: string;
+    link: string;
+    eventRegion: string;
+    affiliations: any[]; // Adjust type accordingly if possible
+    eventRegionId: number;
+}
+
+interface SkillsStandingsEventData {
+    sku: string;
+    startDate: string;
+    seasonName: string;
+}
+
+interface SkillsStandingsScoresData {
+    score: number;
+    programming: number;
+    driver: number;
+    combinedStopTime: number;
+    maxProgramming: number;
+    maxDriver: number;
+    progStopTime: number;
+    driverStopTime: number;
+    progScoredAt: string;
+    driverScoredAt: string;
+}
+
+export interface SkillsStandingsData {
+    rank: number;
+    team: SkillsStandingsTeamData;
+    event: SkillsStandingsEventData;
+    scores: SkillsStandingsScoresData;
+    eligible: boolean;
+}
+
 
 export class TeamSeasonProfile {
   teamNumber: string;
@@ -21,11 +67,6 @@ export class TeamSeasonProfile {
 
   seasonId: number;
   seasonName: string;
-
-  teamOrg: string;
-  teamCity: string;
-  teamRegion: string;
-  teamCountry: string;
 
   mu: number = 25;
   sigma: number = 8.333333333333334;
@@ -62,6 +103,7 @@ export class TeamSeasonProfile {
   awardQualToWorlds: boolean = false;
 
   private static teamSeasonProfiles: TeamSeasonProfile[] = [];
+  private static skillsStandings: SkillsStandingsData[] = [];
 
   private constructor(teamSeasonProfile) {
     Object.assign(this, teamSeasonProfile);
@@ -70,6 +112,20 @@ export class TeamSeasonProfile {
 
   static async countTeamSeasonProfiles() {
     return this.teamSeasonProfiles.length;
+  }
+
+  private static async getSkillsStandings(seasonId: number) {
+    if (this.skillsStandings.length > 0) {
+      return this.skillsStandings;
+    } else {
+      const skillsStandings: SkillsStandingsData[] = await getSkillsStandings({seasonId});
+
+      if (skillsStandings) {
+        this.skillsStandings = skillsStandings;
+      }
+
+      return skillsStandings;
+    }
   }
 
   static async getTeamSeasonProfile(teamId: number, seasonId: number, seasonName: string) {
@@ -130,6 +186,7 @@ export class TeamSeasonProfile {
                 teamOrg: teamObject.organization,
                 teamCity: teamObject.location.city,
                 teamRegion: teamObject.location.region,
+                teamEventRegion: (await TeamSeasonProfile.getSkillsStandings(seasonId)).find((skillsStandingsTeam: SkillsStandingsData) => skillsStandingsTeam.team.id === teamId)?.team.eventRegion || "",
                 teamCountry: teamObject.location.country,
                 programId: teamObject.program.id,
                 programCode: teamObject.program.code,
@@ -156,6 +213,7 @@ export class TeamSeasonProfile {
               teamOrg: teamObject.organization,
               teamCity: teamObject.location.city,
               teamRegion: teamObject.location.region,
+              teamEventRegion: (await TeamSeasonProfile.getSkillsStandings(seasonId)).find((skillsStandingsTeam: SkillsStandingsData) => skillsStandingsTeam.team.id === teamId)?.team.eventRegion || "",
               teamCountry: teamObject.location.country,
               programId: teamObject.program.id,
               programCode: teamObject.program.code,
@@ -175,6 +233,7 @@ export class TeamSeasonProfile {
             teamOrg: teamObject.organization,
             teamCity: teamObject.location.city,
             teamRegion: teamObject.location.region,
+            teamEventRegion: (await TeamSeasonProfile.getSkillsStandings(seasonId)).find((skillsStandingsTeam: SkillsStandingsData) => skillsStandingsTeam.team.id === teamId)?.team.eventRegion || "",
             teamCountry: teamObject.location.country,
             programId: teamObject.program.id,
             programCode: teamObject.program.code,
@@ -195,6 +254,7 @@ export class TeamSeasonProfile {
           teamOrg: teamObject.organization,
           teamCity: teamObject.location.city,
           teamRegion: teamObject.location.region,
+          teamEventRegion: (await TeamSeasonProfile.getSkillsStandings(seasonId)).find((skillsStandingsTeam: SkillsStandingsData) => skillsStandingsTeam.team.id === teamId)?.team.eventRegion || "",
           teamCountry: teamObject.location.country,
           programId: teamObject.program.id,
           programCode: teamObject.program.code,
@@ -259,10 +319,6 @@ export class TeamSeasonProfile {
       teamNumber: existingTeamSeasonProfile.teamNumber,
       seasonId: existingTeamSeasonProfile.seasonId,
       seasonName: existingTeamSeasonProfile.seasonName,
-      teamOrg: existingTeamSeasonProfile.teamOrg,
-      teamCity: existingTeamSeasonProfile.teamCity,
-      teamRegion: existingTeamSeasonProfile.teamRegion,
-      teamCountry: existingTeamSeasonProfile.teamCountry,
       mu: existingTeamSeasonProfile.mu,
       sigma: existingTeamSeasonProfile.sigma,
       openSkill: existingTeamSeasonProfile.openSkill,
@@ -377,7 +433,7 @@ export class TeamSeasonProfile {
 
       const teamAwards = await getTeamAwards(this.teamId, this.seasonId);
 
-      if (teamAwards) {
+      if (teamAwards && teamAwards.length > 0) {
         const qualToRegionals = teamAwards.some((award) =>
           award.qualifications.some((qualification) =>
             qualification === "Event Region Championship")
@@ -391,32 +447,46 @@ export class TeamSeasonProfile {
         this.awardQualToWorlds = awardQualToWorlds;
       }
 
-      const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
+      const skillsStandings = await TeamSeasonProfile.getSkillsStandings(this.seasonId);
 
-      if (teamSkills && teamSkills.length > 0) {
-        const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
-          if (skill.type === "programming" && skill.score > topProgSkills) {
-            return skill.score;
-          } else {
-            return topProgSkills;
-          }
-        }, 0);
+      if (skillsStandings) {
+        const teamSkills = skillsStandings.find((team) => {
+          return team.team.id === this.teamId;
+        });
 
-        const topDriverSkills: number = teamSkills.reduce((topDriverSkills, skill) => {
-          if (skill.type === "driver" && skill.score > topDriverSkills) {
-            return skill.score;
-          } else {
-            return topDriverSkills;
-          }
-        }, 0);
-
-        this.topProgSkills = topProgSkills;
-        this.topDriverSkills = topDriverSkills;
-        this.topTotalSkills = topProgSkills + topDriverSkills;
+        if (teamSkills) {
+          this.topProgSkills = teamSkills.scores.maxProgramming;
+          this.topDriverSkills = teamSkills.scores.maxDriver;
+          this.topTotalSkills = teamSkills.scores.score;
+        }
       } else {
-        this.topProgSkills = 0;
-        this.topDriverSkills = 0;
-        this.topTotalSkills = 0;
+        const teamSkills = await getTeamSkills(this.teamId, this.seasonId);
+
+        if (teamSkills && teamSkills.length > 0) {
+          const topProgSkills: number = teamSkills.reduce((topProgSkills, skill) => {
+            if (skill.type === "programming" && skill.score > topProgSkills) {
+              return skill.score;
+            } else {
+              return topProgSkills;
+            }
+          }, 0);
+
+          const topDriverSkills: number = teamSkills.reduce((topDriverSkills, skill) => {
+            if (skill.type === "driver" && skill.score > topDriverSkills) {
+              return skill.score;
+            } else {
+              return topDriverSkills;
+            }
+          }, 0);
+
+          this.topProgSkills = topProgSkills;
+          this.topDriverSkills = topDriverSkills;
+          this.topTotalSkills = topProgSkills + topDriverSkills;
+        } else {
+          this.topProgSkills = 0;
+          this.topDriverSkills = 0;
+          this.topTotalSkills = 0;
+        }
       }
     } catch (err) {
       logger.error(err);

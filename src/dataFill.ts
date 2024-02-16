@@ -9,7 +9,7 @@ import {
   getTeamObject,
   getTeamAwards,
   getEvents,
-  getTeamSkills, getSeason, getSkillsStandings
+  getTeamSkills, getSeason, getSkillsStandings, getTeamEvents
 } from "./RobotEventsAPI.js";
 import { rating, rate, ordinal } from 'openskill'
 import { logger, prismaConnection } from "./server.js";
@@ -455,6 +455,28 @@ export class TeamSeasonProfile {
 
         this.qualToRegionals = qualToRegionals;
         this.awardQualToWorlds = awardQualToWorlds;
+      }
+
+
+      const teamEvents = await getTeamEvents(this.teamId, this.seasonId, ["World", "State"]);
+
+      let registeredForRegionals = false;
+      let registeredForWorlds = false;
+
+      for (const event of teamEvents) {
+        if (event.level === "World") {
+          registeredForWorlds = true;
+        } else if (event.level === "Regional") {
+          registeredForRegionals = true;
+        }
+      }
+
+      if (registeredForRegionals) {
+        this.qualToRegionals = true;
+      }
+
+      if (registeredForWorlds) {
+        this.awardQualToWorlds = true;
       }
 
       const skillsStandings = await TeamSeasonProfile.getSkillsStandings(this.seasonId);
@@ -932,36 +954,37 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
 // updateSkillsStandings();
 
 // script to rank the skills score of all the season profiles with existing skills scores
-async function rankSkills() {
-  const seasonId = 181;
+// async function rankSkills() {
+//   const seasonId = 181;
+//
+//   const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+//     where: {
+//       seasonId: seasonId,
+//     }
+//   });
+//
+//   // sort by total skills
+//   const sortedTeamSeasonProfiles = teamSeasonProfiles.sort((a, b) => {
+//     return b.totalSkills - a.totalSkills;
+//   });
+//
+//   // rank the skills scores
+//   for (const [index, teamSeasonProfile] of sortedTeamSeasonProfiles.entries()) {
+//     await prismaConnection.teamSeasonProfile.update({
+//       where: {
+//         teamId_seasonId: {
+//           teamId: teamSeasonProfile.teamId,
+//           seasonId: teamSeasonProfile.seasonId,
+//         }
+//       },
+//       data: {
+//         skillsRank: index + 1,
+//       }
+//     });
+//
+//     logger.info(`Ranked ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills rank ${index + 1} and skills score ${teamSeasonProfile.totalSkills}`);
+//   }
+// }
+//
+// rankSkills();
 
-  const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
-    where: {
-      seasonId: seasonId,
-    }
-  });
-
-  // sort by total skills
-  const sortedTeamSeasonProfiles = teamSeasonProfiles.sort((a, b) => {
-    return b.totalSkills - a.totalSkills;
-  });
-
-  // rank the skills scores
-  for (const [index, teamSeasonProfile] of sortedTeamSeasonProfiles.entries()) {
-    await prismaConnection.teamSeasonProfile.update({
-      where: {
-        teamId_seasonId: {
-          teamId: teamSeasonProfile.teamId,
-          seasonId: teamSeasonProfile.seasonId,
-        }
-      },
-      data: {
-        skillsRank: index + 1,
-      }
-    });
-
-    logger.info(`Ranked ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with skills rank ${index + 1} and skills score ${teamSeasonProfile.totalSkills}`);
-  }
-}
-
-rankSkills();

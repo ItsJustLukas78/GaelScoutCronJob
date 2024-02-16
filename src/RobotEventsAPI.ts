@@ -214,13 +214,13 @@ export async function getSkillsStandings({seasonId} : {seasonId: number}): Promi
   }
 }
 
-export async function getTeamEvents(team_id: number, season_id?: number): Promise<any[]> {
+export async function getTeamEvents(team_id: number, season_id?: number, level?: string[]): Promise<any[]> {
   const url = `https://www.robotevents.com/api/v2/teams/${team_id}/events`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
   };
-  const new_params = { season: season_id ? season_id : null};
+  const new_params = { season: season_id ? season_id : null, level: level ? level : null };
 
   const team_events: any[] = [];
 

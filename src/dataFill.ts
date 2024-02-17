@@ -456,52 +456,6 @@ export class TeamSeasonProfile {
         this.qualToRegionals = qualToRegionals;
         this.awardQualToWorlds = awardQualToWorlds;
       }
-
-
-      const teamEvents = await getTeamEvents(this.teamId, this.seasonId, ["World", "State"]);
-
-      let registeredForRegionals = false;
-      let registeredForWorlds = false;
-
-      for (const event of teamEvents) {
-        if (event.level === "World") {
-          registeredForWorlds = true;
-        } else if (event.level === "Regional") {
-          registeredForRegionals = true;
-        }
-      }
-
-      if (registeredForRegionals) {
-        this.qualToRegionals = true;
-      }
-
-      if (registeredForWorlds) {
-        this.awardQualToWorlds = true;
-      }
-
-      const skillsStandings = await TeamSeasonProfile.getSkillsStandings(this.seasonId);
-
-      if (skillsStandings) {
-        const teamSkills = skillsStandings.find((team) => {
-          return team.team.id === this.teamId;
-        });
-
-        if (teamSkills) {
-          this.totalSkills = teamSkills.scores.score;
-          this.progSkills = teamSkills.scores.programming;
-          this.driverSkills = teamSkills.scores.driver;
-          this.topProgSkills = teamSkills.scores.maxProgramming;
-          this.topDriverSkills = teamSkills.scores.maxDriver;
-        }
-      } else {
-        logger.warn(`No skills standings found for ${this.seasonName}`);
-
-        this.totalSkills = 0;
-        this.progSkills = 0;
-        this.driverSkills = 0;
-        this.topProgSkills = 0;
-        this.topDriverSkills = 0;
-      }
     } catch (err) {
       logger.error(err);
     }
@@ -517,7 +471,7 @@ export class TeamSeasonProfile {
     await Promise.all(promises);
   }
 
-  static async performSeasonRankings(seasonId: number) {
+  static async fetchQualsAndSkillsThenRank(seasonId: number) {
     const seasonTeams = await prismaConnection.teamSeasonProfile.findMany({
       where: {
         seasonId: seasonId,
@@ -529,6 +483,53 @@ export class TeamSeasonProfile {
     await Promise.all(seasonTeams.map(async (team) => {
       await this.getTeamSeasonProfile(team.teamId, team.seasonId, team.seasonName);
     }));
+
+    for (const team of this.teamSeasonProfiles) {
+      const teamEvents = await getTeamEvents(team.teamId, team.seasonId, ["World", "State"]);
+
+      let registeredForRegionals = false;
+      let registeredForWorlds = false;
+
+      for (const event of teamEvents) {
+        if (event.level === "World") {
+          registeredForWorlds = true;
+        } else if (event.level === "Regional") {
+          registeredForRegionals = true;
+        }
+      }
+
+      if (registeredForRegionals) {
+        team.qualToRegionals = true;
+      }
+
+      if (registeredForWorlds) {
+        team.awardQualToWorlds = true;
+      }
+
+      const skillsStandings = await TeamSeasonProfile.getSkillsStandings(team.seasonId);
+
+      if (skillsStandings) {
+        const teamSkills = skillsStandings.find((SkillsStandingsTeam) => {
+          return SkillsStandingsTeam.team.id === team.teamId;
+        });
+
+        if (teamSkills) {
+          team.totalSkills = teamSkills.scores.score;
+          team.progSkills = teamSkills.scores.programming;
+          team.driverSkills = teamSkills.scores.driver;
+          team.topProgSkills = teamSkills.scores.maxProgramming;
+          team.topDriverSkills = teamSkills.scores.maxDriver;
+        }
+      } else {
+        logger.warn(`No skills standings found for ${team.seasonName}`);
+
+        team.totalSkills = 0;
+        team.progSkills = 0;
+        team.driverSkills = 0;
+        team.topProgSkills = 0;
+        team.topDriverSkills = 0;
+      }
+    }
 
     const openSkillSorted = [...this.teamSeasonProfiles].sort((teamA, teamB) => {
       return teamB.openSkill - teamA.openSkill;
@@ -685,8 +686,8 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
   const newEvents: any[] = [];
 
   for (const event of seasonEvents) {
-    if ((new Date(event.end).getTime() + (2 * 24 * 60 * 60 * 1000)) > new Date().getTime()) {
-      continue; // Skip events that haven't ended for at least 2 days
+    if ((new Date(event.end).getTime() + (1 * 23 * 60 * 60 * 1000)) > new Date().getTime()) {
+      continue; // Skip events that haven't ended for at least 23 hours
     }
 
     if (SeasonAnalysisObject.lastEventDate.getTime() < new Date(event.end).getTime()) {
@@ -988,3 +989,63 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
 //
 // rankSkills();
 
+// for all teams that have an OpenSkill ranking above 1000, check their qual status from event registrations
+// async function checkQualStatus() {
+//   const seasonId = 181;
+//
+//   const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
+//     where: {
+//       seasonId: seasonId,
+//       openSkillRank: {
+//         gt: 2000,
+//         lt: 3000,
+//       }
+//     }
+//   });
+//
+//   console.log("Analysing " + teamSeasonProfiles.length);
+//   let counter = 0;
+//
+//   for (const teamSeasonProfile of teamSeasonProfiles) {
+//     const teamEvents = await getTeamEvents(teamSeasonProfile.teamId, seasonId, ["World", "State"]);
+//
+//     let registeredForRegionals = false;
+//     let registeredForWorlds = false;
+//
+//     for (const event of teamEvents) {
+//       if (event.level === "World") {
+//         registeredForWorlds = true;
+//       } else if (event.level === "Regional") {
+//         registeredForRegionals = true;
+//       }
+//     }
+//
+//     const updateSchema: any = {}
+//
+//     if (registeredForRegionals) {
+//       updateSchema.qualToRegionals = true;
+//     }
+//
+//     if (registeredForWorlds) {
+//       updateSchema.awardQualToWorlds = true;
+//     }
+//
+//     if (Object.keys(updateSchema).length > 0) {
+//       await prismaConnection.teamSeasonProfile.update({
+//         where: {
+//           teamId_seasonId: {
+//             teamId: teamSeasonProfile.teamId,
+//             seasonId: teamSeasonProfile.seasonId,
+//           }
+//         },
+//         data: updateSchema
+//       });
+//       logger.info(`Updated ${teamSeasonProfile.teamNumber}, ${teamSeasonProfile.teamId} with qual status`);
+//     }
+//
+//     logger.info(counter)
+//     counter++
+//   }
+// }
+//
+// checkQualStatus();

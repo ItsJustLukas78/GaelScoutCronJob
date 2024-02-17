@@ -56,7 +56,7 @@ async function run() {
   await TeamSeasonProfile.storeTeamSeasonProfiles();
 
   logger.info("Performing Season Rankings");
-  await TeamSeasonProfile.performSeasonRankings(currentSeasonId);
+  await TeamSeasonProfile.fetchQualsAndSkillsThenRank(currentSeasonId);
 
   logger.info("Clearing Team Season Profiles From Memory");
   await TeamSeasonProfile.clearTeamSeasonProfilesObjects()
@@ -68,4 +68,4 @@ async function run() {
   await prismaConnection.$disconnect();
 }
 
-run();
+// run();

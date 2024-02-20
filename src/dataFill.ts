@@ -570,6 +570,7 @@ export class TeamSeasonProfile {
       data: {
         numberOfWorldsQualifiers: numberOfWorldsQualifiers,
         numberOfRegionalQualifiers: numberOfRegionalQualifiers,
+        numberOfTeams: this.teamSeasonProfiles.length,
       }
     });
   }
@@ -896,7 +897,6 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
   }
 
   const newNumberOfEvents = SeasonAnalysisObject.numberOfEvents + events.length;
-  const newNumberOfTeams = SeasonAnalysisObject.numberOfTeams + await TeamSeasonProfile.countTeamSeasonProfiles();
   const newLastEventDate = events[events.length - 1].end;
 
   await prismaConnection.seasonAnalysis.update({
@@ -905,7 +905,6 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
     },
     data: {
       numberOfEvents: newNumberOfEvents,
-      numberOfTeams: newNumberOfTeams,
       lastEventDate: newLastEventDate,
     }
   });

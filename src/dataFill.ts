@@ -911,7 +911,7 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
 };
 
 // async function updateSkillsStandings() {
-//   const seasonId = 181;
+//   const seasonId = 190;
 //   const skillsStandings = await getSkillsStandings({seasonId});
 //
 //   if (skillsStandings) {
@@ -955,7 +955,7 @@ export const calcCumulativeStats = async (seasonId: number, SeasonAnalysisObject
 
 // script to rank the skills score of all the season profiles with existing skills scores
 // async function rankSkills() {
-//   const seasonId = 181;
+//   const seasonId = 190;
 //
 //   const teamSeasonProfiles = await prismaConnection.teamSeasonProfile.findMany({
 //     where: {

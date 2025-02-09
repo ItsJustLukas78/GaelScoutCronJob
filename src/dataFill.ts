@@ -245,6 +245,24 @@ export class TeamSeasonProfile {
         });
       }
     } else {
+      // Update existing team profile - handle potential teamNumber conflicts
+      let newTeamNumber = teamObject.number;
+
+      // Check if the new teamNumber is already taken by a different team
+      const existingTeamWithNewNumber = await prismaConnection.teamProfile.findUnique({
+        where: { teamNumber: newTeamNumber },
+      });
+
+      // If conflict exists and it's not the same team, delete the existing team profile
+      if (existingTeamWithNewNumber && existingTeamWithNewNumber.teamId !== teamId) {
+        logger.warn(`Deleting team ${existingTeamWithNewNumber.teamNumber}, ${existingTeamWithNewNumber.teamId} to make room for ${teamObject.number}, ${teamId}`);
+        await prismaConnection.teamProfile.delete({
+          where: {
+            teamId: existingTeamWithNewNumber.teamId,
+          }
+        });
+      }
+
       // update existing team profile
       await prismaConnection.teamProfile.update({
         where: {

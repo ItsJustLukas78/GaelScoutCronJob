@@ -23,8 +23,9 @@ async function run() {
   // spin-up: 173
   // over under: 181
   // high stakes: 190
-  const currentSeasonId: number = 190;
-  const currentSeasonName: string = "V5RC 2024-2025: High Stakes";
+  // push back: 197
+  const currentSeasonId: number = 197;
+  const currentSeasonName: string = "V5RC 2025-2026: Push Back";
 
   let SeasonAnalysis = await prismaConnection.seasonAnalysis.findUnique({
     where: {

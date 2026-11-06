@@ -24,8 +24,8 @@ async function run() {
   // over under: 181
   // high stakes: 190
   // push back: 197
-  const currentSeasonId: number = 197;
-  const currentSeasonName: string = "V5RC 2025-2026: Push Back";
+  const currentSeasonId: number = 204;
+  const currentSeasonName: string = "V5RC 2026-2027: Override";
 
   let SeasonAnalysis = await prismaConnection.seasonAnalysis.findUnique({
     where: {

@@ -61,7 +61,7 @@ async function apiCall(url: string, headers: object, params?: object): Promise<a
 }
 
 export async function getEventId(event_code: string): Promise<number | null> {
-  const url: string = "https://www.robotevents.com/api/v2/events";
+  const url: string = "https://events.vex.com/api/v2/events";
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -85,7 +85,7 @@ export async function getEventId(event_code: string): Promise<number | null> {
 }
 
 export async function getTeamId(team_number: string): Promise<number | null> {
-  const url = "https://www.robotevents.com/api/v2/teams";
+  const url = "https://events.vex.com/api/v2/teams";
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -109,7 +109,7 @@ export async function getTeamId(team_number: string): Promise<number | null> {
 }
 
 export async function getTeamObject(team_id: number): Promise<any | null> {
-  const url = `https://www.robotevents.com/api/v2/teams/${team_id}`;
+  const url = `https://events.vex.com/api/v2/teams/${team_id}`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -131,7 +131,7 @@ export async function getTeamObject(team_id: number): Promise<any | null> {
 }
 
 export async function getTeamSeasonId(team_id: number): Promise<number | null> {
-  const url = "https://www.robotevents.com/api/v2/seasons";
+  const url = "https://events.vex.com/api/v2/seasons";
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -155,7 +155,7 @@ export async function getTeamSeasonId(team_id: number): Promise<number | null> {
 }
 
 export async function getTeamAwards(team_id: number, season_id?: number): Promise<any | null> {
-  const url = `https://www.robotevents.com/api/v2/teams/${team_id}/awards`;
+  const url = `https://events.vex.com/api/v2/teams/${team_id}/awards`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -193,7 +193,7 @@ export async function getTeamAwards(team_id: number, season_id?: number): Promis
 }
 
 export async function getSkillsStandings({seasonId} : {seasonId: number}): Promise<any[]> {
-  const url = `https://www.robotevents.com/api/seasons/${seasonId}/skills?grade_level=High%20School`;
+  const url = `https://events.vex.com/api/seasons/${seasonId}/skills?grade_level=High%20School`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -215,7 +215,7 @@ export async function getSkillsStandings({seasonId} : {seasonId: number}): Promi
 }
 
 export async function getTeamEvents(team_id: number, season_id?: number, level?: string[]): Promise<any[]> {
-  const url = `https://www.robotevents.com/api/v2/teams/${team_id}/events`;
+  const url = `https://events.vex.com/api/v2/teams/${team_id}/events`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -249,7 +249,7 @@ export async function getTeamEvents(team_id: number, season_id?: number, level?:
 }
 
 export async function getTeamMatches(team_id: number, event_id: string): Promise<any[]> {
-  const url = `https://www.robotevents.com/api/v2/teams/${team_id}/matches`;
+  const url = `https://events.vex.com/api/v2/teams/${team_id}/matches`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -281,7 +281,7 @@ export async function getTeamMatches(team_id: number, event_id: string): Promise
 }
 
 export async function getTeamSkills(team_id: number, seasonId?: number): Promise<any[] | null> {
-  const url = `https://www.robotevents.com/api/v2/teams/${team_id}/skills`;
+  const url = `https://events.vex.com/api/v2/teams/${team_id}/skills`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -319,7 +319,7 @@ export async function getTeamSkills(team_id: number, seasonId?: number): Promise
 }
 
 export async function getEventDivisions(event_id: number): Promise<number[] | null> {
-  const url = `https://www.robotevents.com/api/v2/events/${event_id}`;
+  const url = `https://events.vex.com/api/v2/events/${event_id}`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -344,7 +344,7 @@ export async function getEventDivisions(event_id: number): Promise<number[] | nu
 }
 
 export async function getEvents(seasonId: number) {
-  const url = `https://www.robotevents.com/api/v2/events`;
+  const url = `https://events.vex.com/api/v2/events`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -381,7 +381,7 @@ export async function getEventMatches(
     round?: number,
     matchnum?: number
 ): Promise<any[]> {
-  const url = `https://www.robotevents.com/api/v2/events/${event_id}/divisions/${division_id}/matches`;
+  const url = `https://events.vex.com/api/v2/events/${event_id}/divisions/${division_id}/matches`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -414,7 +414,7 @@ export async function getEventMatches(
 }
 
 export async function getEventTeams(event_id: number) {
-  const url = `https://www.robotevents.com/api/v2/events/${event_id}/teams`;
+  const url = `https://events.vex.com/api/v2/events/${event_id}/teams`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,
@@ -444,7 +444,7 @@ export async function getEventTeams(event_id: number) {
 }
 
 export async function getSeason(seasonId: number) {
-  const url = `https://www.robotevents.com/api/v2/seasons/${seasonId}`;
+  const url = `https://events.vex.com/api/v2/seasons/${seasonId}`;
   const new_headers = {
     "accept": "application/json",
     "Authorization": "Bearer " + API_KEY,

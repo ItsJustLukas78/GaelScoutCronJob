@@ -15,7 +15,8 @@
     "outDir": "dist",
     "esModuleInterop": true,
     "strictNullChecks": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
   },
   "ts-node": {
     "esm": true
